@@ -2,6 +2,34 @@
   "schema_version": 2,
   "plugins": [
     {
+      "id": "client-keys",
+      "name": "Client keys",
+      "description": "Policies per CLIProxyAPI client API key: which models a key may use and see in model lists, and whether it may use the OpenAI Responses API. Set them on a Management Center page.",
+      "author": "Whexy",
+      "repository": "https://github.com/whexy/whexy-cpa-store",
+      "homepage": "https://github.com/whexy/whexy-cpa-store/tree/main/plugins/client-keys",
+      "license": "MIT",
+      "tags": [
+        "access",
+        "models",
+        "interceptor",
+        "management"
+      ],
+      "version": "0.1.0",
+      "install": {
+        "type": "direct",
+        "artifacts": [
+          {
+            "goos": "linux",
+            "goarch": "amd64",
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/client-keys-v0.1.0/client-keys-v0.1.0-linux-amd64.zip",
+            "sha256": "bd4e5efcec19cc2597e17ae5f488f7834acbf67b68f82f83e3d38561aae042c5",
+            "size": 7147914
+          }
+        ]
+      }
+    },
+    {
       "id": "disable-response-api",
       "name": "Disable Response API",
       "description": "Rejects OpenAI Responses API requests from configured client API keys, or carrying the WHEXY_CPA_DISABLE_RESPONSE_API header, with an empty 404 so clients fall back to Chat Completions.",
