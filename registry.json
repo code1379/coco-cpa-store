@@ -71,16 +71,16 @@
         "model-router",
         "load-balancing"
       ],
-      "version": "0.1.0",
+      "version": "0.1.1",
       "install": {
         "type": "direct",
         "artifacts": [
           {
             "goos": "linux",
             "goarch": "amd64",
-            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/model-groups-v0.1.0/model-groups-v0.1.0-linux-amd64.zip",
-            "sha256": "759b48a6bf6fea1e5eace5607338fc6ab51f86830791dc0e3b7a7be1d5c2b30f",
-            "size": 7222059
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/model-groups-v0.1.1/model-groups-v0.1.1-linux-amd64.zip",
+            "sha256": "7d651b7d91236779dccf83788a833634ec483cef03042e9851cd200e839f5191",
+            "size": 7223888
           }
         ]
       }
