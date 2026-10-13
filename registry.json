@@ -121,6 +121,7 @@
       "author": "Whexy",
       "repository": "https://github.com/whexy/whexy-cpa-store",
       "homepage": "https://github.com/whexy/whexy-cpa-store/tree/main/plugins/usage-dashboard",
+      "logo": "https://raw.githubusercontent.com/whexy/whexy-cpa-store/main/plugins/usage-dashboard/logo.svg",
       "license": "MIT",
       "tags": [
         "usage",
@@ -128,16 +129,16 @@
         "cost",
         "dashboard"
       ],
-      "version": "0.1.0",
+      "version": "0.2.0",
       "install": {
         "type": "direct",
         "artifacts": [
           {
             "goos": "linux",
             "goarch": "amd64",
-            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/usage-dashboard-v0.1.0/usage-dashboard-v0.1.0-linux-amd64.zip",
-            "sha256": "3d6659257e6b469614a373b20d7508d74bb0c5c8450c88a8f2fbb56317bd6173",
-            "size": 3917759
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/usage-dashboard-v0.2.0/usage-dashboard-v0.2.0-linux-amd64.zip",
+            "sha256": "33d7b25fe55f3e24a7dd7ab3be0dab58b8719f641fe1a8680f890b9139b83c7b",
+            "size": 3918849
           }
         ]
       }
