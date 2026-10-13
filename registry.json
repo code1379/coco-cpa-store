@@ -27,6 +27,34 @@
           }
         ]
       }
+    },
+    {
+      "id": "opencode-go",
+      "name": "OpenCode Go",
+      "description": "Serves an OpenCode Go subscription through CLIProxyAPI: the workspace's Go models over Chat Completions, Messages and Responses, keys managed on a Management Center page, and 5-hour, weekly and monthly quota in the Plugin tab.",
+      "author": "Whexy",
+      "repository": "https://github.com/whexy/whexy-cpa-store",
+      "homepage": "https://github.com/whexy/whexy-cpa-store/tree/main/plugins/opencode-go",
+      "license": "MIT",
+      "tags": [
+        "opencode",
+        "provider",
+        "executor",
+        "quota"
+      ],
+      "version": "0.1.0",
+      "install": {
+        "type": "direct",
+        "artifacts": [
+          {
+            "goos": "linux",
+            "goarch": "amd64",
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/opencode-go-v0.1.0/opencode-go-v0.1.0-linux-amd64.zip",
+            "sha256": "654d722ae28ce1a347f9d375ca03b1702eb79f9de8385962484c0a43abe467a4",
+            "size": 10932287
+          }
+        ]
+      }
     }
   ]
 }
