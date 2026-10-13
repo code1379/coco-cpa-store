@@ -115,6 +115,33 @@
       }
     },
     {
+      "id": "system-prompt",
+      "name": "System Prompts",
+      "description": "Appends your own text to the system prompt of requests for the models you choose, before CLIProxyAPI translates or cloaks them. Rules pair model IDs or wildcard patterns with a prompt and are managed on a Management Center page.",
+      "author": "Whexy",
+      "repository": "https://github.com/whexy/whexy-cpa-store",
+      "homepage": "https://github.com/whexy/whexy-cpa-store/tree/main/plugins/system-prompt",
+      "license": "MIT",
+      "tags": [
+        "system-prompt",
+        "prompt",
+        "interceptor"
+      ],
+      "version": "0.1.0",
+      "install": {
+        "type": "direct",
+        "artifacts": [
+          {
+            "goos": "linux",
+            "goarch": "amd64",
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/system-prompt-v0.1.0/system-prompt-v0.1.0-linux-amd64.zip",
+            "sha256": "7a4aad33e10a66296eaadac3ce68575093c479129c412cdd24ac70589a77c5d5",
+            "size": 3769850
+          }
+        ]
+      }
+    },
+    {
       "id": "usage-dashboard",
       "name": "Usage Dashboard",
       "description": "Adds a Usage page to Management Center: processed tokens, estimated cost, sessions and cache savings over the past day, week, month or quarter, grouped by model family or by account and kept on disk.",
