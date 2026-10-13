@@ -57,6 +57,34 @@
       }
     },
     {
+      "id": "model-groups",
+      "name": "Model Groups",
+      "description": "Publishes one model ID per group of models served by CLIProxyAPI, for example auto-group/fast, and routes each request to one of the group's models by round robin, weighted round robin or fill first. Groups and their members are managed on a Management Center page; CLIProxyAPI keeps choosing the provider account.",
+      "author": "Whexy",
+      "repository": "https://github.com/whexy/whexy-cpa-store",
+      "homepage": "https://github.com/whexy/whexy-cpa-store/tree/main/plugins/model-groups",
+      "license": "MIT",
+      "tags": [
+        "routing",
+        "groups",
+        "model-router",
+        "load-balancing"
+      ],
+      "version": "0.1.0",
+      "install": {
+        "type": "direct",
+        "artifacts": [
+          {
+            "goos": "linux",
+            "goarch": "amd64",
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/model-groups-v0.1.0/model-groups-v0.1.0-linux-amd64.zip",
+            "sha256": "759b48a6bf6fea1e5eace5607338fc6ab51f86830791dc0e3b7a7be1d5c2b30f",
+            "size": 7222059
+          }
+        ]
+      }
+    },
+    {
       "id": "opencode-go",
       "name": "OpenCode Go",
       "description": "Serves an OpenCode Go subscription through CLIProxyAPI: the Go models of a workspace over Chat Completions, Messages and Responses, an OpenCode login from the OAuth Login page or keys on a Management Center page that also disables models and shares bare model IDs with other providers, and 5-hour, weekly and monthly quota in the Plugin tab.",
