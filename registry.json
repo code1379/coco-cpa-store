@@ -112,6 +112,34 @@
           }
         ]
       }
+    },
+    {
+      "id": "usage-dashboard",
+      "name": "Usage Dashboard",
+      "description": "Adds a Usage page to Management Center: processed tokens, estimated cost, sessions and cache savings over the past day, week, month or quarter, grouped by model family or by account and kept on disk.",
+      "author": "Whexy",
+      "repository": "https://github.com/whexy/whexy-cpa-store",
+      "homepage": "https://github.com/whexy/whexy-cpa-store/tree/main/plugins/usage-dashboard",
+      "license": "MIT",
+      "tags": [
+        "usage",
+        "tokens",
+        "cost",
+        "dashboard"
+      ],
+      "version": "0.1.0",
+      "install": {
+        "type": "direct",
+        "artifacts": [
+          {
+            "goos": "linux",
+            "goarch": "amd64",
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/usage-dashboard-v0.1.0/usage-dashboard-v0.1.0-linux-amd64.zip",
+            "sha256": "3d6659257e6b469614a373b20d7508d74bb0c5c8450c88a8f2fbb56317bd6173",
+            "size": 3917759
+          }
+        ]
+      }
     }
   ]
 }
