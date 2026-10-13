@@ -99,16 +99,16 @@
         "executor",
         "quota"
       ],
-      "version": "0.2.0",
+      "version": "0.2.1",
       "install": {
         "type": "direct",
         "artifacts": [
           {
             "goos": "linux",
             "goarch": "amd64",
-            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/opencode-go-v0.2.0/opencode-go-v0.2.0-linux-amd64.zip",
-            "sha256": "73342b1553e60b820c788fe889efa622a97113668c1aa297851fc7cc08338661",
-            "size": 11037232
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/opencode-go-v0.2.1/opencode-go-v0.2.1-linux-amd64.zip",
+            "sha256": "2402ce6e5255caf21ada80d1bee783a08462f895d989907773ccccc24b2fdef8",
+            "size": 11041289
           }
         ]
       }
