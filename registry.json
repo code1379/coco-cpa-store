@@ -116,7 +116,7 @@
     {
       "id": "opencode-go",
       "name": "OpenCode Go",
-      "description": "Serves an OpenCode Go subscription through CLIProxyAPI: the Go models of a workspace over Chat Completions, Messages and Responses, the workspace's opt-in OpenCode Zen pay-as-you-go models as opencode/..., OpenCode's free models as opencode-free/... with no account at all, each with a priority and weight of its own, an OpenCode login from the OAuth Login page or keys on a Management Center page that also enables and disables models and shares bare model IDs with other providers, and 5-hour, weekly and monthly quota in the Plugin tab.",
+      "description": "Serves an OpenCode Go subscription through CLIProxyAPI: the Go models of a workspace over Chat Completions, Messages and Responses, the workspace's opt-in OpenCode Zen pay-as-you-go models as opencode/..., OpenCode's free models as opencode-free/... with no account at all, each with a priority and weight of its own, an OpenCode login from the OAuth Login page or keys on a Management Center page that also enables and disables models, one setting that serves every model under its bare ID to share it with other providers, and 5-hour, weekly and monthly quota in the Plugin tab.",
       "author": "Whexy",
       "repository": "https://github.com/whexy/whexy-cpa-store",
       "homepage": "https://github.com/whexy/whexy-cpa-store/tree/main/plugins/opencode-go",
@@ -128,16 +128,16 @@
         "executor",
         "quota"
       ],
-      "version": "0.5.0",
+      "version": "0.6.0",
       "install": {
         "type": "direct",
         "artifacts": [
           {
             "goos": "linux",
             "goarch": "amd64",
-            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/opencode-go-v0.5.0/opencode-go-v0.5.0-linux-amd64.zip",
-            "sha256": "aee65745da48bc7f7f8e7a6fc3ed4669219bae443eb96cefc4bd24d8a7834842",
-            "size": 11152886
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/opencode-go-v0.6.0/opencode-go-v0.6.0-linux-amd64.zip",
+            "sha256": "5999c163a563163954977873e0cb56f88a4ccf6c42b74e06c19b0e20495efa7d",
+            "size": 11147311
           }
         ]
       }
