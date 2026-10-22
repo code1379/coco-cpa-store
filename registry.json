@@ -31,33 +31,6 @@
       }
     },
     {
-      "id": "disable-response-api",
-      "name": "Disable Response API",
-      "description": "Rejects OpenAI Responses API requests from configured client API keys, or carrying the WHEXY_CPA_DISABLE_RESPONSE_API header, with an empty 404 so clients fall back to Chat Completions.",
-      "author": "Whexy",
-      "repository": "https://github.com/whexy/whexy-cpa-store",
-      "homepage": "https://github.com/whexy/whexy-cpa-store/tree/main/plugins/disable-response-api",
-      "license": "MIT",
-      "tags": [
-        "openai",
-        "responses",
-        "interceptor"
-      ],
-      "version": "0.2.0",
-      "install": {
-        "type": "direct",
-        "artifacts": [
-          {
-            "goos": "linux",
-            "goarch": "amd64",
-            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/disable-response-api-v0.2.0/disable-response-api-v0.2.0-linux-amd64.zip",
-            "sha256": "3a72f5869876c53d239b6142f5f1434d7637d4e4c96d828ff6f52a6bddc901af",
-            "size": 3602130
-          }
-        ]
-      }
-    },
-    {
       "id": "extra-models",
       "name": "Extra Models",
       "description": "Adds model IDs to a built-in provider such as Codex, Claude or Antigravity before the CLIProxyAPI model catalog lists them, so that provider's accounts serve a new model on release day. Entries use the catalog's own format.",
@@ -128,16 +101,16 @@
         "executor",
         "quota"
       ],
-      "version": "0.7.0",
+      "version": "0.7.1",
       "install": {
         "type": "direct",
         "artifacts": [
           {
             "goos": "linux",
             "goarch": "amd64",
-            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/opencode-go-v0.7.0/opencode-go-v0.7.0-linux-amd64.zip",
-            "sha256": "7bdb19016de52338d57536eb0910216f33ddafd43717dbcb1110f108e15f28fe",
-            "size": 11186482
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/opencode-go-v0.7.1/opencode-go-v0.7.1-linux-amd64.zip",
+            "sha256": "bc614afdadf64743bd6b79f7f26368f790e107a38bb4538b0ab2afea971987fd",
+            "size": 11200287
           }
         ]
       }
