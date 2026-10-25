@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
     <title>CLIProxyAPI Playground</title>
-    <style>/* TAILWIND_CSS */</style>
+    <style>
+      /* TAILWIND_CSS */
+    </style>
     <style>
       :root {
         font-family:
@@ -426,84 +428,90 @@
           errorBox.classList.add("hidden");
         }
         // Reuse the Management Center's existing saved session; never persist a new secret.
-  function decodeStoredValue(raw) {
-    const prefix = "enc::v1::";
-    if (!raw || !raw.startsWith(prefix)) return raw;
-    try {
-      const encoded = atob(raw.slice(prefix.length));
-      const bytes = Uint8Array.from(encoded, (ch) => ch.charCodeAt(0));
-      const keyBytes = new TextEncoder().encode(
-        "cli-proxy-api-webui::secure-storage|" +
-          window.location.host +
-          "|" +
-          navigator.userAgent,
-      );
-      for (let i = 0; i < bytes.length; i++) {
-        bytes[i] ^= keyBytes[i % keyBytes.length];
-      }
-      return new TextDecoder().decode(bytes);
-    } catch {
-      return "";
-    }
-  }
+        function decodeStoredValue(raw) {
+          const prefix = "enc::v1::";
+          if (!raw || !raw.startsWith(prefix)) return raw;
+          try {
+            const encoded = atob(raw.slice(prefix.length));
+            const bytes = Uint8Array.from(encoded, (ch) => ch.charCodeAt(0));
+            const keyBytes = new TextEncoder().encode(
+              "cli-proxy-api-webui::secure-storage|" +
+                window.location.host +
+                "|" +
+                navigator.userAgent,
+            );
+            for (let i = 0; i < bytes.length; i++) {
+              bytes[i] ^= keyBytes[i % keyBytes.length];
+            }
+            return new TextDecoder().decode(bytes);
+          } catch {
+            return "";
+          }
+        }
 
-  function parseStoredValue(raw) {
-    const decoded = decodeStoredValue(raw);
-    if (!decoded) return null;
-    try {
-      return JSON.parse(decoded);
-    } catch {
-      return decoded;
-    }
-  }
+        function parseStoredValue(raw) {
+          const decoded = decodeStoredValue(raw);
+          if (!decoded) return null;
+          try {
+            return JSON.parse(decoded);
+          } catch {
+            return decoded;
+          }
+        }
 
-  function getManagementKey() {
-    try {
-      const saved = parseStoredValue(localStorage.getItem("cli-proxy-auth"));
-      const state = saved && (saved.state || saved);
-      if (
-        state &&
-        typeof state.managementKey === "string" &&
-        state.managementKey.trim()
-      ) {
-        return state.managementKey.trim();
-      }
-      const legacy = parseStoredValue(localStorage.getItem("managementKey"));
-      if (typeof legacy === "string" && legacy.trim()) {
-        return legacy.trim();
-      }
-    } catch {}
-    return "";
-  }
+        function getManagementKey() {
+          try {
+            const saved = parseStoredValue(
+              localStorage.getItem("cli-proxy-auth"),
+            );
+            const state = saved && (saved.state || saved);
+            if (
+              state &&
+              typeof state.managementKey === "string" &&
+              state.managementKey.trim()
+            ) {
+              return state.managementKey.trim();
+            }
+            const legacy = parseStoredValue(
+              localStorage.getItem("managementKey"),
+            );
+            if (typeof legacy === "string" && legacy.trim()) {
+              return legacy.trim();
+            }
+          } catch {}
+          return "";
+        }
 
-  function extractApiKey(payload) {
-    const candidates = [
-      payload?.access?.["api-keys"],
-      payload?.access?.apiKeys,
-      payload?.config?.access?.["api-keys"],
-      payload?.config?.access?.apiKeys,
-      payload?.data?.access?.["api-keys"],
-      payload?.data?.config?.access?.["api-keys"],
-      payload?.["api-keys"],
-      payload?.apiKeys,
-      payload?.config?.["api-keys"],
-      payload?.data?.["api-keys"],
-      payload?.data?.config?.["api-keys"],
-      payload?.result?.access?.["api-keys"],
-      payload?.result?.config?.access?.["api-keys"],
-      payload?.result?.["api-keys"],
-      payload?.result?.data?.access?.["api-keys"],
-      payload?.result?.data?.["api-keys"],
-    ];
-    for (const list of candidates) {
-      if (!Array.isArray(list)) continue;
-      const found = list.find((value) => typeof value === "string" && value.trim());
-      if (found) return found.trim();
-    }
-    return "";
-  }
+        function extractApiKey(payload) {
+          const candidates = [
+            payload?.access?.["api-keys"],
+            payload?.access?.apiKeys,
+            payload?.config?.access?.["api-keys"],
+            payload?.config?.access?.apiKeys,
+            payload?.data?.access?.["api-keys"],
+            payload?.data?.config?.access?.["api-keys"],
+            payload?.["api-keys"],
+            payload?.apiKeys,
+            payload?.config?.["api-keys"],
+            payload?.data?.["api-keys"],
+            payload?.data?.config?.["api-keys"],
+            payload?.result?.access?.["api-keys"],
+            payload?.result?.config?.access?.["api-keys"],
+            payload?.result?.["api-keys"],
+            payload?.result?.data?.access?.["api-keys"],
+            payload?.result?.data?.["api-keys"],
+          ];
+          for (const list of candidates) {
+            if (!Array.isArray(list)) continue;
+            const found = list.find(
+              (value) => typeof value === "string" && value.trim(),
+            );
+            if (found) return found.trim();
+          }
+          return "";
+        }
 
-  async function ensureKey() {
+        async function ensureKey() {
           if (key()) return key();
           const managementKey = getManagementKey();
           if (!managementKey)
