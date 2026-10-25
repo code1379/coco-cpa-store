@@ -1,0 +1,125 @@
+diff --git a/internal/state/state.go b/internal/state/state.go
+--- a/internal/state/state.go
++++ b/internal/state/state.go
+@@ -85,2 +85,4 @@
+ 	// DisabledModels 是被禁用的模型 ID（带 cn:/global: 前缀的完整 ID）。
+ 	DisabledModels []string `json:"disabled_models,omitempty"`
++	// EnabledModels 保存用户明确启用的模型，用于覆盖供应商的默认禁用策略。
++	EnabledModels []string `json:"enabled_models,omitempty"`
+@@ -224,1 +226,2 @@ func clone(state *State) State {
+ 	out.DisabledModels = append([]string(nil), state.DisabledModels...)
++	out.EnabledModels = append([]string(nil), state.EnabledModels...)
+diff --git a/internal/admin/catalog.go b/internal/admin/catalog.go
+--- a/internal/admin/catalog.go
++++ b/internal/admin/catalog.go
+@@ -43,4 +43,5 @@ type Catalog struct {
+ 	mu       sync.RWMutex
+ 	settings ModelSettings
+ 	disabled map[string]bool
++	enabled  map[string]bool
+ 	aliases  map[string]string
+@@ -72,9 +73,10 @@ func NewCatalog(store *state.Store, registry *core.Registry) *Catalog {
+ 	return &Catalog{
+ 		store:    store,
+ 		registry: registry,
+ 		disabled: map[string]bool{},
++		enabled:  map[string]bool{},
+ 		aliases:  map[string]string{},
+ 		cached:   map[string]cachedVendor{},
+ 		probing:  map[string]chan struct{}{},
+ 		probeAt:  map[string]time.Time{},
+ 	}
+ }
+@@ -95,7 +97,8 @@ func (c *Catalog) Configure(settings ModelSettings) {
+ func (c *Catalog) ReloadFromState(snapshot state.State) {
+ 	c.mu.Lock()
+ 	c.reloadAliasesLocked(snapshot.ModelAliases)
+ 	c.mu.Unlock()
+ 	c.reloadDisabledWith(snapshot.DisabledModels)
++	c.reloadEnabledWith(snapshot.EnabledModels)
+ }
++
++func (c *Catalog) reloadEnabledWith(items []string) {
++	enabled := make(map[string]bool, len(items)*2)
++	for _, item := range items {
++		for _, key := range c.ExpandKeys(item) {
++			if key != "" {
++				enabled[key] = true
++			}
++		}
++	}
++	c.mu.Lock()
++	c.enabled = enabled
++	c.mu.Unlock()
++}
+@@ -200,17 +213,26 @@ func (c *Catalog) IsDisabled(vendorID, modelID string) bool {
+ 	bare := strings.TrimSpace(modelID)
+ 	if bare == "" {
+ 		return false
+ 	}
+ 	if prefix, rest := c.registry.SplitModelID(bare); prefix != "" {
+ 		if vendor, okVendor := c.vendorForPrefix(prefix); okVendor && vendor.ID() != vendorID {
+ 			return false
+ 		}
+ 		bare = rest
+ 	}
+ 	c.mu.RLock()
+ 	defer c.mu.RUnlock()
+-	if !c.disabled[bare] && !c.disabled[c.registry.ModelKeyFor(vendorID, bare)] {
+-		return false
++	modelKey := c.registry.ModelKeyFor(vendorID, bare)
++	if c.disabled[bare] || c.disabled[modelKey] {
++		return c.registeredLocked(vendorID, bare)
+ 	}
+-	return c.registeredLocked(vendorID, bare)
++	// Cline's upstream catalog labels free models explicitly. Subscription,
++	// Cloud-only, and unknown Cline models are denied by default unless the
++	// user explicitly enabled them. A configured disabled_models entry always
++	// wins over this UI override.
++	if vendorID == "cline" && !c.enabled[bare] && !c.enabled[modelKey] {
++		if c.cached[vendorID].credits[bare] != "免费" {
++			return c.registeredLocked(vendorID, bare)
++		}
++	}
++	return false
+ }
+@@ -270,26 +292,37 @@ func (c *Catalog) SetDisabled(targets []string, disabled bool) []string {
+ 	var next []string
+ 	c.store.Mutate(func(s *state.State) {
+ 		current := make(map[string]bool, len(s.DisabledModels))
+ 		for _, id := range s.DisabledModels {
+ 			current[strings.TrimSpace(id)] = true
+ 		}
++		enabledOverrides := make(map[string]bool, len(s.EnabledModels))
++		for _, id := range s.EnabledModels {
++			enabledOverrides[strings.TrimSpace(id)] = true
++		}
+ 		for _, key := range normalized {
+ 			if key == "" {
+ 				continue
+ 			}
+ 			if disabled {
+ 				current[key] = true
++				delete(enabledOverrides, key)
+ 			} else {
+ 				delete(current, key)
++				enabledOverrides[key] = true
+ 			}
+ 		}
+ 		next = make([]string, 0, len(current))
+ 		for id := range current {
+ 			next = append(next, id)
+ 		}
+ 		sort.Strings(next)
+ 		s.DisabledModels = next
++		s.EnabledModels = make([]string, 0, len(enabledOverrides))
++		for id := range enabledOverrides {
++			s.EnabledModels = append(s.EnabledModels, id)
++		}
++		sort.Strings(s.EnabledModels)
+ 		s.RestartPending = true
+ 	})
+-	c.reloadDisabledWith(next)
++	c.ReloadFromState(c.store.Snapshot())
+ 	return next
+ }
