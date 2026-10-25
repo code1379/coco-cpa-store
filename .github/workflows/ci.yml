@@ -1,0 +1,71 @@
+name: Personal CI
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: personal-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-build:
+    name: Validate and build plugin packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate formatting, metadata, tests, and plugin builds
+        run: nix flake check --print-build-logs
+
+      - name: Build downloadable ZIP artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          count=0
+
+          for plugin_dir in plugins/*; do
+            [[ -f "$plugin_dir/plugin.json" && -f "$plugin_dir/go/go.mod" ]] || continue
+            plugin="${plugin_dir##*/}"
+            echo "::group::Build ${plugin}"
+            nix build ".#plugins.${plugin}" --print-build-logs --out-link "result-${plugin}"
+            shopt -s nullglob
+            archives=(result-"${plugin}"/*.zip)
+            if [[ ${#archives[@]} -eq 0 ]]; then
+              echo "No ZIP artifact produced for ${plugin}" >&2
+              exit 1
+            fi
+            cp -L "${archives[@]}" dist/
+            count=$((count + 1))
+            echo "::endgroup::"
+          done
+
+          if [[ "$count" -eq 0 ]]; then
+            echo "No buildable plugin packages found." >&2
+            exit 1
+          fi
+
+          echo "Built $count plugin package(s):"
+          ls -lh dist/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpa-plugin-builds-${{ github.sha }}
+          path: dist/*.zip
+          if-no-files-found: error
+          retention-days: 14
