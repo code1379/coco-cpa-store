@@ -30,7 +30,7 @@ diff --git a/internal/admin/catalog.go b/internal/admin/catalog.go
  		probeAt:  map[string]time.Time{},
  	}
  }
-@@ -95,7 +97,8 @@ func (c *Catalog) Configure(settings ModelSettings) {
+@@ -96,6 +96,7 @@ func (c *Catalog) Configure(settings ModelSettings) {
  func (c *Catalog) ReloadFromState(snapshot state.State) {
  	c.mu.Lock()
  	c.reloadAliasesLocked(snapshot.ModelAliases)
@@ -52,7 +52,7 @@ diff --git a/internal/admin/catalog.go b/internal/admin/catalog.go
 +	c.enabled = enabled
 +	c.mu.Unlock()
 +}
-@@ -200,17 +213,26 @@ func (c *Catalog) IsDisabled(vendorID, modelID string) bool {
+@@ -200,17 +213,27 @@ func (c *Catalog) IsDisabled(vendorID, modelID string) bool {
  	bare := strings.TrimSpace(modelID)
  	if bare == "" {
  		return false
@@ -83,7 +83,7 @@ diff --git a/internal/admin/catalog.go b/internal/admin/catalog.go
 +	}
 +	return false
  }
-@@ -270,26 +292,37 @@ func (c *Catalog) SetDisabled(targets []string, disabled bool) []string {
+@@ -270,26 +292,38 @@ func (c *Catalog) SetDisabled(targets []string, disabled bool) []string {
  	var next []string
  	c.store.Mutate(func(s *state.State) {
  		current := make(map[string]bool, len(s.DisabledModels))
