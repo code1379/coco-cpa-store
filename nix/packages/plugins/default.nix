@@ -50,10 +50,24 @@ let
       version = versionOf id;
       # Rename the source root: the directory is called "go", which would
       # otherwise land on buildGoModule's GOPATH and make Go ignore go.mod.
-      src = builtins.path {
-        name = id;
-        path = pluginsDir + "/${id}/go";
-      };
+      src =
+        if id == "freetier2api" then
+          pkgs.fetchFromGitHub {
+            owner = "jiandanc";
+            repo = "CLIProxyAPI-freetier2api-plugin";
+            rev = "490845f36455f96f15fb0082bb6eb4ecf92da008";
+            hash = lib.fakeHash;
+          }
+        else
+          builtins.path {
+            name = id;
+            path = pluginsDir + "/${id}/go";
+          };
+
+      postPatch = lib.optionalString (id == "freetier2api") ''
+        substituteInPlace main.go \
+          --replace-fail 'var pluginVersion = app.DefaultVersion' 'var pluginVersion = "${versionOf id}"'
+      '';
       vendorHash = import (pluginsDir + "/${id}/vendor-hash.nix");
 
       # Plugins are loaded through the CLIProxyAPI C ABI, so the artifact is a
