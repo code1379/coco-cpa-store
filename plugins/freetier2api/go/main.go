@@ -1,5 +1,7 @@
 package main
 
-// This file declares the package version. The Nix build fetches the pinned upstream source
-// and injects this version into its main.go before compiling the plugin.
-var pluginVersion = "0.1.0"
+// This placeholder declares the package version for Nix metadata discovery.
+// The build fetches the pinned upstream source and injects this version before compiling.
+const (
+	pluginVersion = "0.1.0"
+)
