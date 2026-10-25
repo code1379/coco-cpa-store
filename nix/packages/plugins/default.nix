@@ -68,6 +68,19 @@ let
         substituteInPlace main.go \
           --replace-fail 'var pluginVersion = app.DefaultVersion' 'var pluginVersion = "${versionOf id}"'
       '';
+      patches =
+        if id == "freetier2api" then
+          let
+            patchDir = pluginsDir + "/freetier2api/patches";
+            patchNames =
+              if builtins.pathExists patchDir then
+                lib.filter (name: lib.hasSuffix ".patch" name) (builtins.attrNames (builtins.readDir patchDir))
+              else
+                [ ];
+          in
+          map (name: patchDir + "/${name}") patchNames
+        else
+          [ ];
       vendorHash = import (pluginsDir + "/${id}/vendor-hash.nix");
 
       # Plugins are loaded through the CLIProxyAPI C ABI, so the artifact is a
