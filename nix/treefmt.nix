@@ -14,5 +14,6 @@ _: {
   settings.global.excludes = [
     "registry.json"
     "plugins/*/CHANGELOG.md"
+    "plugins/cli-playground/go/web/tailwind.css"
   ];
 }

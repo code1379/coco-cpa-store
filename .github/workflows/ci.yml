@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: personal-ci-${{ github.workflow }}-${{ github.ref }}
+  group: personal-ci-${{ github.workflow }}-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 90
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -63,7 +63,7 @@ jobs:
           ls -lh dist/
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: cpa-plugin-builds-${{ github.sha }}
           path: dist/*.zip

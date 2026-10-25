@@ -1,0 +1,162 @@
+diff --git a/internal/state/state.go b/internal/state/state.go
+--- a/internal/state/state.go
++++ b/internal/state/state.go
+@@ -84,6 +84,8 @@
+ 
+ 	// DisabledModels 是被禁用的模型 ID（带 cn:/global: 前缀的完整 ID）。
+ 	DisabledModels []string `json:"disabled_models,omitempty"`
++	// EnabledModels stores explicit user enables that override provider defaults.
++	EnabledModels []string `json:"enabled_models,omitempty"`
+ 
+ 	// ModelAliases 是模型别名表：<vendorID>:<官方模型 ID> → 对外别名。
+ 	ModelAliases map[string]string `json:"model_aliases,omitempty"`
+@@ -222,6 +224,7 @@
+ 	out.KeepaliveHours = nil
+ 	out.BlackcatHours = nil
+ 	out.DisabledModels = append([]string(nil), state.DisabledModels...)
++	out.EnabledModels = append([]string(nil), state.EnabledModels...)
+ 	if state.AutoCheckin != nil {
+ 		enabled := *state.AutoCheckin
+ 		out.AutoCheckin = &enabled
+diff --git a/internal/admin/catalog.go b/internal/admin/catalog.go
+--- a/internal/admin/catalog.go
++++ b/internal/admin/catalog.go
+@@ -43,6 +43,7 @@
+ 	mu       sync.RWMutex
+ 	settings ModelSettings
+ 	disabled map[string]bool
++	enabled  map[string]bool
+ 	aliases  map[string]string
+ 	// cached 是各供应商最近一次拿到的**官方 ID** 清单（控制台回读用）。
+ 	cached map[string]cachedVendor
+@@ -73,6 +74,7 @@
+ 		store:    store,
+ 		registry: registry,
+ 		disabled: map[string]bool{},
++		enabled:  map[string]bool{},
+ 		aliases:  map[string]string{},
+ 		cached:   map[string]cachedVendor{},
+ 		probing:  map[string]chan struct{}{},
+@@ -98,9 +100,22 @@
+ 	c.reloadAliasesLocked(snapshot.ModelAliases)
+ 	c.mu.Unlock()
+ 	c.reloadDisabledWith(snapshot.DisabledModels)
++	c.reloadEnabledWith(snapshot.EnabledModels)
+ }
+ 
+ // RefreshFromState 直接读取存储快照并重算。
++func (c *Catalog) reloadEnabledWith(items []string) {
++	enabled := make(map[string]bool, len(items)*2)
++	for _, item := range items {
++		for _, key := range c.ExpandKeys(item) {
++			if key != "" { enabled[key] = true }
++		}
++	}
++	c.mu.Lock()
++	c.enabled = enabled
++	c.mu.Unlock()
++}
++
+ func (c *Catalog) RefreshFromState() {
+ 	if c.store == nil {
+ 		return
+@@ -210,10 +225,19 @@
+ 	}
+ 	c.mu.RLock()
+ 	defer c.mu.RUnlock()
++	modelKey := c.registry.ModelKeyFor(vendorID, bare)
++	if c.disabled[bare] || c.disabled[modelKey] {
++		return c.registeredLocked(vendorID, bare)
++	}
++	// Free Cline models are enabled by default. Subscription, Cloud-only, and
++	// unknown Cline models fail closed until the user explicitly enables them.
++	// An explicit disabled_models entry always wins over this UI override.
++	if vendorID == "cline" && !c.enabled[bare] && !c.enabled[modelKey] {
++		if c.cached[vendorID].credits[bare] != "免费" {
++			return c.registeredLocked(vendorID, bare)
++		}
+-	if !c.disabled[bare] && !c.disabled[c.registry.ModelKeyFor(vendorID, bare)] {
+-		return false
+ 	}
++	return false
+-	return c.registeredLocked(vendorID, bare)
+ }
+ 
+ // registeredLocked 报告某供应商的当前清单里是否还有这个官方 ID。
+@@ -270,28 +294,29 @@
+ 	var next []string
+ 	c.store.Mutate(func(s *state.State) {
+ 		current := make(map[string]bool, len(s.DisabledModels))
++		for _, id := range s.DisabledModels { current[strings.TrimSpace(id)] = true }
++		enabledOverrides := make(map[string]bool, len(s.EnabledModels))
++		for _, id := range s.EnabledModels { enabledOverrides[strings.TrimSpace(id)] = true }
+-		for _, id := range s.DisabledModels {
+-			current[strings.TrimSpace(id)] = true
+-		}
+ 		for _, key := range normalized {
++			if key == "" { continue }
+-			if key == "" {
+-				continue
+-			}
+ 			if disabled {
+ 				current[key] = true
++				delete(enabledOverrides, key)
+ 			} else {
+ 				delete(current, key)
++				enabledOverrides[key] = true
+ 			}
+ 		}
+ 		next = make([]string, 0, len(current))
++		for id := range current { next = append(next, id) }
+-		for id := range current {
+-			next = append(next, id)
+-		}
+ 		sort.Strings(next)
+ 		s.DisabledModels = next
++		s.EnabledModels = make([]string, 0, len(enabledOverrides))
++		for id := range enabledOverrides { s.EnabledModels = append(s.EnabledModels, id) }
++		sort.Strings(s.EnabledModels)
+ 		s.RestartPending = true
+ 	})
++	c.ReloadFromState(c.store.Snapshot())
+-	c.reloadDisabledWith(next)
+ 	return next
+ }
+ 
+diff --git a/internal/admin/catalog_test.go b/internal/admin/catalog_test.go
+--- a/internal/admin/catalog_test.go
++++ b/internal/admin/catalog_test.go
+@@ -391,3 +391,33 @@
+ 		t.Fatalf("persisted credits = %q, want 0.80X after repricing", got)
+ 	}
+ }
++
++
++type labeledVendor struct {
++	fakeVendor
++	labels map[string]string
++}
++func (v *labeledVendor) ModelCredits() map[string]string { return v.labels }
++func TestClineModelsDefaultDisabledUnlessFreeOrExplicitlyEnabled(t *testing.T) {
++	store := state.NewStore()
++	store.Configure(t.TempDir())
++	if _, err := store.Load(); err != nil { t.Fatal(err) }
++	vendor := &labeledVendor{
++		fakeVendor: fakeVendor{Meta: core.Meta{VendorID: "cline", VendorName: "Cline"}},
++		labels: map[string]string{"beam-free":"免费", "pass-model":"订阅", "cloud-model":"Cline Cloud"},
++	}
++	registry := core.NewRegistry()
++	if err := registry.Register(vendor); err != nil { t.Fatal(err) }
++	catalog := NewCatalog(store, registry)
++	catalog.CacheProbedModels("cline", []pluginapi.ModelInfo{{ID:"beam-free"},{ID:"pass-model"},{ID:"cloud-model"}})
++	if catalog.IsDisabled("cline", "beam-free") { t.Fatal("free model should be enabled by default") }
++	if !catalog.IsDisabled("cline", "pass-model") { t.Fatal("subscription model should be disabled by default") }
++	if !catalog.IsDisabled("cline", "cloud-model") { t.Fatal("Cline Cloud model should be disabled by default") }
++	catalog.SetDisabled([]string{"cline:pass-model"}, false)
++	if catalog.IsDisabled("cline", "pass-model") { t.Fatal("explicitly enabled subscription model should be allowed") }
++	reloaded := NewCatalog(store, registry)
++	reloaded.ReloadFromState(store.Snapshot())
++	if reloaded.IsDisabled("cline", "pass-model") { t.Fatal("explicit enable override should persist across reload") }
++	reloaded.SetDisabled([]string{"cline:beam-free"}, true)
++	if !reloaded.IsDisabled("cline", "beam-free") { t.Fatal("explicitly disabled free model should remain disabled") }
++}

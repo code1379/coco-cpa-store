@@ -1,0 +1,99 @@
+diff --git a/internal/vendors/cline/models.go b/internal/vendors/cline/models.go
+--- a/internal/vendors/cline/models.go
++++ b/internal/vendors/cline/models.go
+@@ -2,8 +2,8 @@
+ 
+ // 本文件实现 Cline 的模型清单。
+ //
++// 上游有一个**无需认证**的推荐模型接口，返回多个数组：
++// recommended（推荐）/ free（免费）/ clinePass（订阅可用）/ clineCloud（Cloud 产品入口）。
+-// 上游有一个**无需认证**的推荐模型接口，返回三个数组：
+-// recommended（推荐）/ free（免费）/ clinePass（订阅可用）。
+ // 实测免费模型的 tags 可能为空，因此「是否免费」必须按**在哪个数组里**判定，
+ // 只看 tags 会把免费模型误判成付费。
+ //
+@@ -50,6 +50,7 @@
+ const (
+ 	CostFree = "free"
+ 	CostPass = "pass"
++	CostCloud = "cloud"
+ )
+ 
+ // FetchModels 拉取上游推荐模型清单（无需认证）。
+@@ -105,6 +106,7 @@
+ 		Recommended []rawModel `json:"recommended"`
+ 		Free        []rawModel `json:"free"`
+ 		ClinePass   []rawModel `json:"clinePass"`
++		ClineCloud  []rawModel `json:"clineCloud"`
+ 	}
+ 	if errUnmarshal := json.Unmarshal(body, &payload); errUnmarshal != nil {
+ 		return nil, fmt.Errorf("models response is not valid JSON: %w", errUnmarshal)
+@@ -112,7 +114,7 @@
+ 
+ 	// 去重键用模型 ID：同一个模型可能同时出现在多个数组里。
+ 	seen := map[string]bool{}
++	out := make([]Model, 0, len(payload.Recommended)+len(payload.Free)+len(payload.ClinePass)+len(payload.ClineCloud))
+-	out := make([]Model, 0, len(payload.Recommended)+len(payload.Free)+len(payload.ClinePass))
+ 
+ 	appendAll := func(entries []rawModel, cost string, isFreeArray bool) {
+ 		for _, entry := range entries {
+@@ -144,6 +146,7 @@
+ 	// （用户更关心它免费可用）。
+ 	appendAll(payload.Free, CostFree, true)
+ 	appendAll(payload.ClinePass, CostPass, false)
++	appendAll(payload.ClineCloud, CostCloud, false)
+ 	appendAll(payload.Recommended, CostPass, false)
+ 	return out, nil
+ }
+diff --git a/internal/vendors/cline/adapter.go b/internal/vendors/cline/adapter.go
+--- a/internal/vendors/cline/adapter.go
++++ b/internal/vendors/cline/adapter.go
+@@ -146,6 +146,8 @@
+ 		description = "[免费] " + description
+ 	case CostPass:
+ 		description = "[订阅] " + description
++	case CostCloud:
++		description = "[Cline Cloud] " + description
+ 	}
+ 	if model.IsReasoning {
+ 		description += "（推理）"
+@@ -168,6 +170,8 @@
+ 		return "免费"
+ 	case CostPass:
+ 		return "订阅"
++	case CostCloud:
++		return "Cline Cloud"
+ 	}
+ 	return ""
+ }
+diff --git a/internal/vendors/cline/adapter_test.go b/internal/vendors/cline/adapter_test.go
+--- a/internal/vendors/cline/adapter_test.go
++++ b/internal/vendors/cline/adapter_test.go
+@@ -23,6 +23,7 @@
+ 	v.modelsToPluginAPI([]Model{
+ 		{ID: "cline-free/glm-5.3", Name: "GLM", Cost: CostFree},
+ 		{ID: "cline-pass/glm-5.3", Name: "GLM", Cost: CostPass},
++		{ID: "cline-cloud/claude-sonnet", Name: "Claude Sonnet", Cost: CostCloud},
+ 		{ID: "cline-unknown/x", Name: "X"},
+ 	})
+ 
+@@ -33,7 +34,19 @@
+ 	if got := credits["cline-pass/glm-5.3"]; got != "订阅" {
+ 		t.Errorf("pass tier = %q; want 订阅", got)
+ 	}
++	if got := credits["cline-cloud/claude-sonnet"]; got != "Cline Cloud" {
++		t.Errorf("cloud tier = %q; want Cline Cloud", got)
++	}
+ 	if _, ok := credits["cline-unknown/x"]; ok {
+ 		t.Error("unknown cost tier must not be reported as a credits value")
+ 	}
+ }
++
++func TestParseModelsIncludesClineCloud(t *testing.T) {
++	models, err := parseModels([]byte(`{"free":[{"id":"cline-free/beam","name":"Beam"}],"clineCloud":[{"id":"cline-cloud/sonnet","name":"Sonnet"}]}`))
++	if err != nil { t.Fatal(err) }
++	if len(models) != 2 { t.Fatalf("model count = %d, want 2", len(models)) }
++	if models[0].Cost != CostFree || models[1].Cost != CostCloud {
++		t.Fatalf("model tiers = %q and %q, want free and cloud", models[0].Cost, models[1].Cost)
++	}
++}
