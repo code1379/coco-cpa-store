@@ -35,6 +35,9 @@ const (
 //go:embed web/index.html
 var playgroundHTML []byte
 
+//go:embed web/tailwind.css
+var tailwindCSS []byte
+
 type envelope struct {
 	OK     bool            `json:"ok"`
 	Result json.RawMessage `json:"result,omitempty"`
