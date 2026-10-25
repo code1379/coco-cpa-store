@@ -1,0 +1,63 @@
+diff --git a/internal/vendors/cline/models.go b/internal/vendors/cline/models.go
+index 16c7ecf..0000000 100644
+--- a/internal/vendors/cline/models.go
++++ b/internal/vendors/cline/models.go
+@@
+-// 上游有一个**无需认证**的推荐模型接口，返回三个数组：
+-// recommended（推荐）/ free（免费）/ clinePass（订阅可用）。
++// 上游有一个**无需认证**的推荐模型接口，返回多个数组：
++// recommended（推荐）/ free（免费）/ clinePass（订阅可用）/ clineCloud（Cloud 产品入口）。
+@@
+ const (
+ 	CostFree = "free"
+ 	CostPass = "pass"
++	CostCloud = "cloud"
+ )
+@@
+ 	var payload struct {
+ 		Recommended []rawModel `json:"recommended"`
+ 		Free        []rawModel `json:"free"`
+ 		ClinePass   []rawModel `json:"clinePass"`
++		ClineCloud  []rawModel `json:"clineCloud"`
+ 	}
+@@
+-	out := make([]Model, 0, len(payload.Recommended)+len(payload.Free)+len(payload.ClinePass))
++	out := make([]Model, 0, len(payload.Recommended)+len(payload.Free)+len(payload.ClinePass)+len(payload.ClineCloud))
+@@
+ 	appendAll(payload.Free, CostFree, true)
+ 	appendAll(payload.ClinePass, CostPass, false)
++	appendAll(payload.ClineCloud, CostCloud, false)
+ 	appendAll(payload.Recommended, CostPass, false)
+*** End Patch
+diff --git a/internal/vendors/cline/adapter.go b/internal/vendors/cline/adapter.go
+index 0000000..0000000 100644
+--- a/internal/vendors/cline/adapter.go
++++ b/internal/vendors/cline/adapter.go
+@@
+ 	case CostPass:
+ 		description = "[订阅] " + description
++	case CostCloud:
++		description = "[Cline Cloud] " + description
+@@
+ 	case CostPass:
+ 		return "订阅"
++	case CostCloud:
++		return "Cline Cloud"
+*** End Patch
+diff --git a/internal/vendors/cline/adapter_test.go b/internal/vendors/cline/adapter_test.go
+index 0000000..0000000 100644
+--- a/internal/vendors/cline/adapter_test.go
++++ b/internal/vendors/cline/adapter_test.go
+@@
+ 		{ID: "cline-free/glm-5.3", Name: "GLM", Cost: CostFree},
+ 		{ID: "cline-pass/glm-5.3", Name: "GLM", Cost: CostPass},
++		{ID: "cline-cloud/claude-sonnet", Name: "Claude Sonnet", Cost: CostCloud},
+ 		{ID: "cline-unknown/x", Name: "X"},
+@@
+ 	if got := credits["cline-pass/glm-5.3"]; got != "订阅" {
+ 		t.Errorf("pass tier = %q; want 订阅", got)
+ 	}
++	if got := credits["cline-cloud/claude-sonnet"]; got != "Cline Cloud" {
++		t.Errorf("cloud tier = %q; want Cline Cloud", got)
++	}
+*** End Patch
