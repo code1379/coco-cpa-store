@@ -1,33 +1,37 @@
 diff --git a/internal/vendors/cline/models.go b/internal/vendors/cline/models.go
 --- a/internal/vendors/cline/models.go
 +++ b/internal/vendors/cline/models.go
-@@ -3,5 +3,5 @@ package cline
+@@ -3,5 +3,5 @@
  // 本文件实现 Cline 的模型清单。
  //
 -// 上游有一个**无需认证**的推荐模型接口，返回三个数组：
 -// recommended（推荐）/ free（免费）/ clinePass（订阅可用）。
 +// 上游有一个**无需认证**的推荐模型接口，返回多个数组：
 +// recommended（推荐）/ free（免费）/ clinePass（订阅可用）/ clineCloud（Cloud 产品入口）。
-@@ -48,6 +48,7 @@ type Model struct {
+@@ -49,5 +49,6 @@
  // 计费档常量。
  const (
  	CostFree = "free"
  	CostPass = "pass"
 +	CostCloud = "cloud"
  )
-@@ -102,16 +103,18 @@ func parseModels(body []byte) ([]Model, error) {
+@@ -102,10 +102,11 @@ func parseModels(body []byte) ([]Model, error) {
  	var payload struct {
  		Recommended []rawModel `json:"recommended"`
  		Free        []rawModel `json:"free"`
  		ClinePass   []rawModel `json:"clinePass"`
 +		ClineCloud  []rawModel `json:"clineCloud"`
  	}
-@@ -112,7 +115,7 @@ func parseModels(body []byte) ([]Model, error) {
+ 	if errUnmarshal := json.Unmarshal(body, &payload); errUnmarshal != nil {
+ 		return nil, fmt.Errorf("models response is not valid JSON: %w", errUnmarshal)
+ 	}
+@@ -113,3 +113,3 @@ func parseModels(body []byte) ([]Model, error) {
  	// 去重键用模型 ID：同一个模型可能同时出现在多个数组里。
  	seen := map[string]bool{}
 -	out := make([]Model, 0, len(payload.Recommended)+len(payload.Free)+len(payload.ClinePass))
 +	out := make([]Model, 0, len(payload.Recommended)+len(payload.Free)+len(payload.ClinePass)+len(payload.ClineCloud))
-@@ -143,6 +146,7 @@ func parseModels(body []byte) ([]Model, error) {
+@@ -143,7 +143,8 @@ func parseModels(body []byte) ([]Model, error) {
+ 	// 顺序有讲究：free 先入表，这样同名的模型以「免费」档为准
  	// （用户更关心它免费可用）。
  	appendAll(payload.Free, CostFree, true)
  	appendAll(payload.ClinePass, CostPass, false)
@@ -38,7 +42,9 @@ diff --git a/internal/vendors/cline/models.go b/internal/vendors/cline/models.go
 diff --git a/internal/vendors/cline/adapter.go b/internal/vendors/cline/adapter.go
 --- a/internal/vendors/cline/adapter.go
 +++ b/internal/vendors/cline/adapter.go
-@@ -144,8 +144,10 @@ func describeModel(model Model) string {
+@@ -142,8 +142,10 @@ func describeModel(model Model) string {
+ 	description := strings.TrimSpace(model.Description)
+ 	switch model.Cost {
  	case CostFree:
  		description = "[免费] " + description
  	case CostPass:
@@ -46,7 +52,10 @@ diff --git a/internal/vendors/cline/adapter.go b/internal/vendors/cline/adapter.
 +	case CostCloud:
 +		description = "[Cline Cloud] " + description
  	}
-@@ -164,8 +166,10 @@ func costLabel(cost string) string {
+ 	if model.IsReasoning {
+ 		description += "（推理）"
+@@ -165,9 +167,11 @@ func costLabel(cost string) string {
+ 	switch cost {
  	case CostFree:
  		return "免费"
  	case CostPass:
@@ -59,14 +68,19 @@ diff --git a/internal/vendors/cline/adapter.go b/internal/vendors/cline/adapter.
 diff --git a/internal/vendors/cline/adapter_test.go b/internal/vendors/cline/adapter_test.go
 --- a/internal/vendors/cline/adapter_test.go
 +++ b/internal/vendors/cline/adapter_test.go
-@@ -22,6 +22,7 @@ func TestModelCreditsFromCostTier(t *testing.T) {
+@@ -21,7 +21,8 @@ func TestModelCreditsFromCostTier(t *testing.T) {
+ 	v := Instances(core.Env{})[0].(*adapter)
  	v.modelsToPluginAPI([]Model{
  		{ID: "cline-free/glm-5.3", Name: "GLM", Cost: CostFree},
  		{ID: "cline-pass/glm-5.3", Name: "GLM", Cost: CostPass},
 +		{ID: "cline-cloud/claude-sonnet", Name: "Claude Sonnet", Cost: CostCloud},
  		{ID: "cline-unknown/x", Name: "X"},
  	})
-@@ -32,6 +33,9 @@ func TestModelCreditsFromCostTier(t *testing.T) {
+@@ -29,11 +30,14 @@ func TestModelCreditsFromCostTier(t *testing.T) {
+ 	credits := v.ModelCredits()
+ 	if got := credits["cline-free/glm-5.3"]; got != "免费" {
+ 		t.Errorf("free tier = %q; want 免费", got)
+ 	}
  	if got := credits["cline-pass/glm-5.3"]; got != "订阅" {
  		t.Errorf("pass tier = %q; want 订阅", got)
  	}
