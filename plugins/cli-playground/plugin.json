@@ -1,0 +1,16 @@
+{
+  "id": "cli-playground",
+  "name": "CLIProxyAPI Playground",
+  "description": "Personal model testing workbench with chat, streaming, image generation, and dynamic model-group selection.",
+  "author": "code1379",
+  "repository": "https://github.com/code1379/coco-cpa-store",
+  "homepage": "https://github.com/code1379/coco-cpa-store/tree/main/plugins/cli-playground",
+  "license": "MIT",
+  "tags": [
+    "playground",
+    "chat",
+    "images",
+    "model-groups",
+    "testing"
+  ]
+}
