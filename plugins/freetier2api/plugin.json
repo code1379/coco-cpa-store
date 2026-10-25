@@ -6,11 +6,5 @@
   "repository": "https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin",
   "homepage": "https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin",
   "license": "MIT",
-  "tags": [
-    "free-tier",
-    "provider",
-    "cline",
-    "oauth",
-    "routing"
-  ]
+  "tags": ["free-tier", "provider", "cline", "oauth", "routing"]
 }
