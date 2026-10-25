@@ -1,0 +1,16 @@
+{
+  "id": "freetier2api",
+  "name": "FreeTier 2API",
+  "description": "CLIProxyAPI native plugin aggregating multiple free-tier AI providers with account management, dynamic model discovery, model aliases, routing, and failover. Personal use only; review upstream provider terms.",
+  "author": "jiandanc",
+  "repository": "https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin",
+  "homepage": "https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin",
+  "license": "MIT",
+  "tags": [
+    "free-tier",
+    "provider",
+    "cline",
+    "oauth",
+    "routing"
+  ]
+}
