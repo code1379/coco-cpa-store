@@ -1,163 +1,71 @@
-# whexy-cpa-store
+# Coco CPA Store
 
-Private plugin store registry for [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI).
-CLIProxyAPI's Management Center reads this repo's `registry.json` and installs
-plugins directly from this repo's GitHub release assets.
+个人使用的 CLIProxyAPI 插件开发仓库，基于 [Whexy 的 whexy-cpa-store](https://github.com/whexy/whexy-cpa-store) 进行维护。
 
-## Plugins
+本仓库当前目标是**开发、测试和构建插件**，不是公开插件商城。GitHub Actions 只运行验证和构建，并把 ZIP 作为短期 workflow artifact 保存；不会自动创建 GitHub Release、打 tag 或更新插件商店注册表。
 
-- `client-keys` — policies per client API key, set on a Management Center page: which models a key may use and see listed, and whether it may use the OpenAI Responses API.
-- `extra-models` — adds model IDs to one built-in provider before CLIProxyAPI's model catalog lists them, so that provider's accounts serve a new model right away; entries use the catalog's format and are set in the plugin's settings.
-- `model-groups` — gives one model ID to a group of models, for example `auto-group/fast`, and routes each request to one of them by round robin, weighted round robin or fill first; groups are managed on a Management Center page and CLIProxyAPI keeps choosing the provider account.
-- `opencode-go` — serves an OpenCode Go subscription: the workspace's Go models under `opencode-go/<model>`, an OpenCode login from the OAuth Login page or keys managed on a Management Center page that also disables models, one setting that serves every model under its bare ID to share it with other providers, quota in the Plugin tab.
-- `system-prompt` — appends your own text to the system prompt of requests for the models you choose, before CLIProxyAPI translates or cloaks them; rules pairing model IDs or patterns with a prompt are managed on a Management Center page.
-- `usage-dashboard` — adds a Usage page to Management Center: tokens, estimated cost and sessions over the past day to quarter, grouped by model family or account, kept on disk.
+## 插件包
 
-## How it works
+保留的上游插件，分别维护在独立目录：
 
-- `registry.json` is a CLIProxyAPI plugin store registry (`schema_version` 2,
-  `install.type: direct`). Every entry pins per-platform artifact URLs and
-  sha256 digests.
-- Artifacts are zips attached to this repo's GitHub releases. Each zip holds
-  the plugin's shared library at its root, named `<id>-v<version>.so`.
-- The registry lists only what has been published. For every plugin directory
-  on `main`, whexy-bot takes the highest version among release assets named
-  `<id>-v<version>-<goos>-<goarch>.zip`, the digest GitHub recorded for each
-  asset, and `plugin.json` as of that release's tag. Never edit
-  `registry.json` by hand.
-- A plugin's version is the `pluginVersion` constant in its `go/main.go`. The
-  plugin reports that constant to the host, and CLIProxyAPI offers an update
-  whenever it differs from the registry version, so the release is built from
-  the commit that declares it.
+- `client-keys` — 按 CLIProxyAPI 客户端 API Key 设置模型可见性、使用权限和 Responses API 权限。
+- `extra-models` — 为内置提供商的模型目录补充模型 ID。
+- `model-groups` — 将一个模型 ID 映射到多个候选模型，并支持轮询、加权轮询和 fill-first 路由。
+- `opencode-go` — 将 OpenCode Go 模型接入 CLIProxyAPI，并提供模型启停、OAuth/Key 管理和额度展示。
+- `system-prompt` — 按模型 ID 或匹配规则追加系统提示词。
+- `usage-dashboard` — 展示 Token、估算费用和会话统计。
 
-## Layout
+我们自己的插件：
 
-```
+- `cline-provider` — 计划中的 Cline Provider，动态发现模型，默认启用免费模型、默认禁用订阅/付费模型，并在服务端执行启停限制。
+- `cli-playground` — 将已有 Playground 整理成独立的 CLIProxyAPI 原生插件。
+
+## 目录约定
+
+每个插件独立维护在 `plugins/<id>/` 下，保留上游约定：
+
+```text
 plugins/<id>/
-  plugin.json          # store metadata (id, name, description, ...), no version
-  vendor-hash.nix      # fixed-output hash of the vendored Go dependencies
-  CHANGELOG.md         # written by release/bump.mjs
-  go/                  # plugin source (Go module); main.go declares pluginVersion
-tools/registry-check/  # validates registry.json and plugin.json with the host's parser
-release/               # validation scope, version bumps, tagging, release publication and registry tooling
-nix/packages/plugins/  # .#plugins.<id> builds, tests and zips one plugin
+  plugin.json
+  vendor-hash.nix
+  CHANGELOG.md
+  go/
+    go.mod
+    main.go
 ```
 
-## Module path caveat
+Go 插件使用 CLIProxyAPI 的 C ABI 插件接口，并通过 `-buildmode=c-shared` 构建动态库。Nix 定义各插件的构建和测试方式。
 
-Plugins that import `github.com/router-for-me/CLIProxyAPI/v7/internal/...` are
-constrained by Go's `internal` visibility rule: the module path must stay
-rooted at `github.com/router-for-me/CLIProxyAPI/v7/...`. The pinned
-CLIProxyAPI release in `go.mod` supplies the module; no upstream checkout is
-needed at build time.
+## GitHub Actions
 
-## Adding a plugin
+工作流位于 `.github/workflows/ci.yml`，在 push、pull request 和手动触发时运行：
 
-1. Copy the plugin source to `plugins/<id>/go/` and set the module path as
-   described above (`github.com/router-for-me/CLIProxyAPI/v7/whexy-cpa-store/plugins/<id>`).
-2. Add `plugins/<id>/plugin.json` without a `version` (id must equal the
-   directory name).
-3. In `go/main.go`, declare `pluginVersion = "0.0.0"` in a `const` block and
-   register it as the plugin's `Metadata.Version`. 0.0.0 means unreleased.
-4. Add `plugins/<id>/vendor-hash.nix` with `lib.fakeHash`, run
-   `nix build .#plugins.<id>`, and paste the hash from the error message.
-5. Open a pull request with a `feat(<id>): ...` commit. To release it in the
-   same pull request, see [Release flow](#release-flow).
+1. 安装 Nix。
+2. 运行 `nix flake check --print-build-logs`，检查格式、元数据、测试和插件构建。
+3. 为每个可构建插件生成 ZIP。
+4. 上传为 GitHub Actions artifact，保留 14 天。
 
-## Release flow
+工作流**不会**创建 tag、GitHub Release、更新 `registry.json` 或发布插件商店。
 
-A plugin is released by the pull request that raises its `pluginVersion`.
-Plugins release independently: a release touches only its own directory, and
-pull requests merge without being rebased onto the latest `main`, so
-concurrent releases of different plugins never wait for each other.
+## 本地验证
 
-To release, finish the pull request's changes, then run:
+需要安装 Nix，并在仓库根目录运行：
 
 ```bash
-node release/bump.mjs <id>          # next version from the commits since <id>'s last tag
-node release/bump.mjs <id> 0.2.1    # or name the version
+nix flake check --print-build-logs
+nix build .#plugins.opencode-go --print-build-logs
 ```
 
-It writes the version into `go/main.go` and a section into `CHANGELOG.md`
-listing the `feat`, `fix`, `perf` and `revert` commits that touch
-`plugins/<id>/`. Before 1.0, `feat` and breaking changes bump the minor
-version and `fix` the patch. Commit both files as
-`chore(<id>): release <version>` and merge the pull request; changes merged
-without a bump wait for the next one.
+GitHub Actions 产物可以在对应 workflow run 的 Artifacts 区域下载。下载后先在测试环境验证，不要直接覆盖服务器正在运行的插件。
 
-Woodpecker runs `.woodpecker.yaml`, and nothing else is manual; never create
-tags or releases by hand:
+## 上游来源与许可
 
-1. Pull requests run the part of `nix flake check` their changed files
-   affect, as chosen by `release/validate.mjs`. Formatting, lint and the
-   release tooling's tests, which also require a changelog section for every
-   declared version, always run. A change in `plugins/<id>/` builds and tests
-   that plugin, and a change to `registry.json`, a `plugin.json` or
-   `tools/registry-check/` runs the registry check. Changes outside these,
-   `release/` and the top-level docs run all of `nix flake check`.
-2. Each push to `main` runs the same check for its own changes and for every
-   plugin whose declared version `registry.json` does not list yet, then tags
-   `<id>-v<version>` at that commit for each of those versions that has no tag
-   yet.
-3. The tag pipeline checks the tag against the declared version, builds only
-   that plugin, creates a draft release with its changelog section, uploads
-   the zip and publishes the release.
-4. whexy-bot regenerates `registry.json` and commits it to `main`. This is the
-   only commit that bypasses the pull request rule, and it starts no pipeline.
+- 上游仓库：[whexy/whexy-cpa-store](https://github.com/whexy/whexy-cpa-store)
+- 上游各插件的 `plugin.json` 声明了 MIT，但上游根目录当前未找到统一的 `LICENSE` 文件。公开分发前应核实各插件源码和依赖的实际授权，并保留原作者版权声明。
+- Cline Provider 的实现可参考 [chengyixu/cpa-plugin-cline](https://github.com/chengyixu/cpa-plugin-cline)，该仓库包含自己的 MIT LICENSE；借鉴或复制代码时仍需保留对应许可声明。
 
-The Nix steps share a build cache across pipelines
-([whexy/ci-cache](https://github.com/whexy/ci-cache)): a plugin or check none
-of whose inputs changed is downloaded instead of built, so a tag pipeline
-normally downloads the plugin its `main` push built. CI builds without the Nix
-sandbox, which its step pods cannot host, so only a local `nix flake check`
-catches a build that reaches the network.
+## 安全说明
 
-A failed tag pipeline leaves the release as a draft or missing: fix the cause
-and rerun the pipeline. A failed `main` pipeline tags nothing; the next
-passing push or a manual pipeline on `main` tags what it missed. Published
-releases are immutable, so a broken version is fixed by releasing a new one.
-To republish the registry, start a manual pipeline on `main`.
-
-A tag without any pipeline means Woodpecker missed the tag's webhook delivery,
-which GitHub does not retry. In the repository's webhook settings, open Recent
-Deliveries, find the push for that tag and redeliver it.
-
-The pipeline acts as whexy-bot through the `github_app_id`,
-`github_app_installation_id` and `github_app_private_key` organization
-secrets.
-
-## Consuming the store
-
-In the CLIProxyAPI `config.yaml`:
-
-```yaml
-plugins:
-  enabled: true
-  store-sources:
-    - "https://raw.githubusercontent.com/whexy/whexy-cpa-store/main/registry.json"
-```
-
-Then open Management Center → Plugin Store and install. The store install
-writes the shared library into `plugins/<goos>/<goarch>/`, enables the plugin
-in `plugins.configs.<id>`, and reloads the config. In containers, make sure
-the config file and the plugins directory are writable volumes.
-
-Keep the URL exactly as written. CLIProxyAPI ties each installed plugin to the
-URL of the registry it came from and stops offering updates when it changes.
-
-## Local development
-
-```bash
-nix develop                                # go, node, jq, gh + pre-commit hooks
-nix fmt                                    # treefmt: nixfmt, gofmt, shfmt, prettier
-nix flake check                            # lint, registry check, release tests, build + test every plugin
-nix build .#plugins.usage-dashboard        # one plugin's release zip in ./result
-node --test release/release.test.mjs       # the release tooling's tests alone
-```
-
-Preview the registry the next publication would commit, with your own GitHub
-token; it writes nothing:
-
-```bash
-CI_REPO=whexy/whexy-cpa-store GITHUB_TOKEN="$(gh auth token)" node release/registry.mjs --dry-run
-```
+- 不要提交 API Key、OAuth token、认证 JSON、私钥或服务器配置。
+- Cline 免费模型的 `x-client-type: cline-cli` 是客户端标识，不是认证凭证；当前可用性是基于实测，服务端策略可能变化。
+- 本仓库仅构建测试，不自动发布任何插件，也不修改 1Panel 服务器。
