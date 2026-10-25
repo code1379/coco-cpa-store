@@ -50,10 +50,37 @@ let
       version = versionOf id;
       # Rename the source root: the directory is called "go", which would
       # otherwise land on buildGoModule's GOPATH and make Go ignore go.mod.
-      src = builtins.path {
-        name = id;
-        path = pluginsDir + "/${id}/go";
-      };
+      src =
+        if id == "freetier2api" then
+          pkgs.fetchFromGitHub {
+            owner = "jiandanc";
+            repo = "CLIProxyAPI-freetier2api-plugin";
+            rev = "490845f36455f96f15fb0082bb6eb4ecf92da008";
+            hash = "sha256-ETJLyJZor3zPk4/WgEjUfJPGhzdklZciXbwlilXwOuM=";
+          }
+        else
+          builtins.path {
+            name = id;
+            path = pluginsDir + "/${id}/go";
+          };
+
+      postPatch = lib.optionalString (id == "freetier2api") ''
+        substituteInPlace main.go \
+          --replace-fail 'var pluginVersion = app.DefaultVersion' 'var pluginVersion = "${versionOf id}"'
+      '';
+      patches =
+        if id == "freetier2api" then
+          let
+            patchDir = pluginsDir + "/freetier2api/patches";
+            patchNames =
+              if builtins.pathExists patchDir then
+                lib.filter (name: lib.hasSuffix ".patch" name) (builtins.attrNames (builtins.readDir patchDir))
+              else
+                [ ];
+          in
+          map (name: patchDir + "/${name}") patchNames
+        else
+          [ ];
       vendorHash = import (pluginsDir + "/${id}/vendor-hash.nix");
 
       # Plugins are loaded through the CLIProxyAPI C ABI, so the artifact is a
@@ -69,6 +96,13 @@ let
       nativeCheckInputs = [ pkgs.nodejs_24 ];
       checkPhase = ''
         runHook preCheck
+        # Nix builds commonly set HOME to /homeless-shelter, which is not writable.
+        # Some integration tests exercise plugin state persistence under the user's home.
+        export HOME="$TMPDIR/plugin-test-home"
+        mkdir -p "$HOME"
+        export XDG_CONFIG_HOME="$HOME/.config"
+        export XDG_CACHE_HOME="$HOME/.cache"
+        mkdir -p "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME"
         go test ./...
         runHook postCheck
       '';
