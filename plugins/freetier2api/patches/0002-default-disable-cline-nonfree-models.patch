@@ -123,3 +123,64 @@ diff --git a/internal/admin/catalog.go b/internal/admin/catalog.go
 +	c.ReloadFromState(c.store.Snapshot())
  	return next
  }
+
+diff --git a/internal/admin/catalog_test.go b/internal/admin/catalog_test.go
+--- a/internal/admin/catalog_test.go
++++ b/internal/admin/catalog_test.go
+@@ -394,0 +395,56 @@
++type labeledVendor struct {
++	fakeVendor
++	labels map[string]string
++}
++
++func (v *labeledVendor) ModelCredits() map[string]string {
++	return v.labels
++}
++
++func TestClineModelsDefaultDisabledUnlessFreeOrExplicitlyEnabled(t *testing.T) {
++	store := state.NewStore()
++	store.Configure(t.TempDir())
++	if _, err := store.Load(); err != nil {
++		t.Fatal(err)
++	}
++	vendor := &labeledVendor{
++		fakeVendor: fakeVendor{Meta: core.Meta{VendorID: "cline", VendorName: "Cline"}},
++		labels: map[string]string{
++			"beam-free": "免费",
++			"pass-model": "订阅",
++			"cloud-model": "Cline Cloud",
++		},
++	}
++	registry := core.NewRegistry()
++	if err := registry.Register(vendor); err != nil {
++		t.Fatal(err)
++	}
++	catalog := NewCatalog(store, registry)
++	catalog.CacheProbedModels("cline", []pluginapi.ModelInfo{
++		{ID: "beam-free"},
++		{ID: "pass-model"},
++		{ID: "cloud-model"},
++	})
++	if catalog.IsDisabled("cline", "beam-free") {
++		t.Fatal("free model should be enabled by default")
++	}
++	if !catalog.IsDisabled("cline", "pass-model") {
++		t.Fatal("subscription model should be disabled by default")
++	}
++	if !catalog.IsDisabled("cline", "cloud-model") {
++		t.Fatal("Cline Cloud model should be disabled by default")
++	}
++	catalog.SetDisabled([]string{"cline:pass-model"}, false)
++	if catalog.IsDisabled("cline", "pass-model") {
++		t.Fatal("explicitly enabled subscription model should be allowed")
++	}
++	reloaded := NewCatalog(store, registry)
++	reloaded.ReloadFromState(store.Snapshot())
++	if reloaded.IsDisabled("cline", "pass-model") {
++		t.Fatal("explicit enable override should persist across reload")
++	}
++	reloaded.SetDisabled([]string{"cline:beam-free"}, true)
++	if !reloaded.IsDisabled("cline", "beam-free") {
++		t.Fatal("explicitly disabled free model should remain disabled")
++	}
++}
