@@ -157,7 +157,7 @@ func handleManagement(raw []byte) ([]byte, error) {
 	if path != "" && path != resourcePath && !strings.HasSuffix(path, resourcePath) {
 		return okEnvelope(managementResponse{StatusCode: http.StatusNotFound, Headers: http.Header{"content-type": []string{"text/plain; charset=utf-8"}}, Body: []byte("Not found")})
 	}
-	return okEnvelope(managementResponse{StatusCode: http.StatusOK, Headers: http.Header{"content-type": []string{"text/html; charset=utf-8"}, "cache-control": []string{"no-store"}, "x-content-type-options": []string{"nosniff"}}, Body: append([]byte(nil), playgroundHTML...)})
+	return okEnvelope(managementResponse{StatusCode: http.StatusOK, Headers: http.Header{"content-type": []string{"text/html; charset=utf-8"}, "cache-control": []string{"no-store"}, "x-content-type-options": []string{"nosniff"}}, Body: []byte(strings.Replace(string(playgroundHTML), "/* TAILWIND_CSS */", string(tailwindCSS), 1))})
 }
 func okEnvelope(v any) ([]byte, error) {
 	result, err := json.Marshal(v)
