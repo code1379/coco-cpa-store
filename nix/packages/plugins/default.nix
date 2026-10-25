@@ -96,6 +96,13 @@ let
       nativeCheckInputs = [ pkgs.nodejs_24 ];
       checkPhase = ''
         runHook preCheck
+        # Nix builds commonly set HOME to /homeless-shelter, which is not writable.
+        # Some integration tests exercise plugin state persistence under the user's home.
+        export HOME="$TMPDIR/plugin-test-home"
+        mkdir -p "$HOME"
+        export XDG_CONFIG_HOME="$HOME/.config"
+        export XDG_CACHE_HOME="$HOME/.cache"
+        mkdir -p "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME"
         go test ./...
         runHook postCheck
       '';
