@@ -6,11 +6,5 @@
   "repository": "https://github.com/code1379/coco-cpa-store",
   "homepage": "https://github.com/code1379/coco-cpa-store/tree/main/plugins/cli-playground",
   "license": "MIT",
-  "tags": [
-    "playground",
-    "chat",
-    "images",
-    "model-groups",
-    "testing"
-  ]
+  "tags": ["playground", "chat", "images", "model-groups", "testing"]
 }
