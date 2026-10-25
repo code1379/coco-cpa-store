@@ -90,3 +90,20 @@ diff --git a/internal/vendors/cline/adapter_test.go b/internal/vendors/cline/ada
  		t.Error("unknown cost tier must not be reported as a credits value")
  	}
  }
+
+diff --git a/internal/vendors/cline/adapter_test.go b/internal/vendors/cline/adapter_test.go
+--- a/internal/vendors/cline/adapter_test.go
++++ b/internal/vendors/cline/adapter_test.go
+@@ -39,0 +40,12 @@
++func TestParseModelsIncludesClineCloud(t *testing.T) {
++	models, err := parseModels([]byte(`{"free":[{"id":"cline-free/beam","name":"Beam"}],"clineCloud":[{"id":"cline-cloud/sonnet","name":"Sonnet"}]}`))
++	if err != nil {
++		t.Fatal(err)
++	}
++	if len(models) != 2 {
++		t.Fatalf("model count = %d, want 2", len(models))
++	}
++	if models[0].Cost != CostFree || models[1].Cost != CostCloud {
++		t.Fatalf("model tiers = %q and %q, want free and cloud", models[0].Cost, models[1].Cost)
++	}
++}
