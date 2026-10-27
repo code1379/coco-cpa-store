@@ -131,16 +131,16 @@
         "codex",
         "claude"
       ],
-      "version": "0.1.0",
+      "version": "0.1.1",
       "install": {
         "type": "direct",
         "artifacts": [
           {
             "goos": "linux",
             "goarch": "amd64",
-            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/reset-first-v0.1.0/reset-first-v0.1.0-linux-amd64.zip",
-            "sha256": "cd88915ccb227fb7ded61bf3eb8089730fe89ba2326f0a8da32d5fd5bc9fb441",
-            "size": 3740419
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/reset-first-v0.1.1/reset-first-v0.1.1-linux-amd64.zip",
+            "sha256": "a63c1abb44e657ceff49f5ee13e0bf18c013497fc55c8b3809def97f3e9f04d0",
+            "size": 3742782
           }
         ]
       }
