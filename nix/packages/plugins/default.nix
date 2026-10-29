@@ -56,7 +56,7 @@ let
             owner = "jiandanc";
             repo = "CLIProxyAPI-freetier2api-plugin";
             rev = "e90609d0138c0cfd7f1e00c0f8c827f8e5c22d11";
-            hash = lib.fakeHash;
+            hash = "sha256-1sjaNXdr0Vop3Tty/gdCvmY2MLtOz97sJ1OuljmS4c4=";
           }
         else
           builtins.path {
