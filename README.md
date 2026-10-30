@@ -20,6 +20,7 @@
 
 - `cline-provider` — 计划中的 Cline Provider，动态发现模型，默认启用免费模型、默认禁用订阅/付费模型，并在服务端执行启停限制。
 - `cli-playground` — 将已有 Playground 整理成独立的 CLIProxyAPI 原生插件。
+- `freetier2api` — 基于 [jiandanc/CLIProxyAPI-freetier2api-plugin](https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin) 上游源码构建，保留本仓库的 Cline Cloud 模型分类和非免费模型默认禁用补丁。
 
 ## 目录约定
 
@@ -62,6 +63,7 @@ GitHub Actions 产物可以在对应 workflow run 的 Artifacts 区域下载。�
 ## 上游来源与许可
 
 - 上游仓库：[whexy/whexy-cpa-store](https://github.com/whexy/whexy-cpa-store)
+- FreeTier2API 上游源码：[jiandanc/CLIProxyAPI-freetier2api-plugin](https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin)，通过 Nix 固定 Commit 和源码哈希构建；本地补丁独立维护在 `plugins/freetier2api/patches/`。
 - 上游各插件的 `plugin.json` 声明了 MIT，但上游根目录当前未找到统一的 `LICENSE` 文件。公开分发前应核实各插件源码和依赖的实际授权，并保留原作者版权声明。
 - Cline Provider 的实现可参考 [chengyixu/cpa-plugin-cline](https://github.com/chengyixu/cpa-plugin-cline)，该仓库包含自己的 MIT LICENSE；借鉴或复制代码时仍需保留对应许可声明。
 
