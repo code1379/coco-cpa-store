@@ -1,11 +1,9 @@
 # Changelog
 
-## 0.1.21
+## 0.1.23
 
-- Upgrade the pinned FreeTier 2API source to upstream commit `e90609d0138c0cfd7f1e00c0f8c827f8e5c22d11`.
-- Keep the local Cline Cloud model catalog and non-free-model default access policy patches.
-- Include upstream account-management, credential-refresh, quota-reporting, and provider compatibility fixes.
-- Align the reported plugin version and build artifact name with the updated upstream version.
+- Upgrade the pinned source to upstream release [0.1.23](https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin/releases/tag/v0.1.23).
+- Preserve the local Cline Cloud classification and non-free-model default-deny patches.
 
 ## 0.1.0
 
