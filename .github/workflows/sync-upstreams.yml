@@ -101,7 +101,7 @@ jobs:
           EOF
           )"
 
-          pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$GITHUB_REPOSITORY_OWNER:$branch" --state open --json number --jq '.[0].number // empty')"
+          pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state open --json number --jq '.[0].number // empty')"
           if [[ -n "$pr" ]]; then
             gh pr edit "$pr" --repo "$GITHUB_REPOSITORY" --title "chore(sync): merge Whexy CPA Store upstream" --body "$body"
           else
@@ -156,12 +156,8 @@ jobs:
             exit 1
           }
 
-          pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$GITHUB_REPOSITORY_OWNER:upgrade/freetier2api-e90609d" --state open --json number --jq '.[0].number // empty')"
-          if [[ -n "$pr" ]]; then
-            branch="upgrade/freetier2api-e90609d"
-          else
-            branch="automation/freetier2api-update"
-          fi
+          # Keep using the existing upgrade PR branch so its review history is preserved.
+          branch="upgrade/freetier2api-e90609d"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -259,20 +255,20 @@ jobs:
           body="$(cat <<EOF
           ## Upgrade
           - Upstream release: [$tag](https://github.com/$repo/releases/tag/$tag)
-          - Source commit: `$revision`
-          - Fixed Nix source hash: `$hash`
+          - Source commit: $revision
+          - Fixed Nix source hash: $hash
 
           ## Local changes preserved
           - Cline Cloud model classification patch.
           - Non-free/unknown Cline model default-deny and explicit-enable patch.
 
           ## Validation
-          - `nix build .#plugins.freetier2api --print-build-logs` passed before pushing.
+          - nix build .#plugins.freetier2api --print-build-logs passed before pushing.
           - No automatic merge, release publishing, or server deployment.
           EOF
           )"
 
-          pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$GITHUB_REPOSITORY_OWNER:$branch" --state open --json number --jq '.[0].number // empty')"
+          pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state open --json number --jq '.[0].number // empty')"
           if [[ -n "$pr" ]]; then
             gh pr edit "$pr" --repo "$GITHUB_REPOSITORY" --title "chore(freetier2api): upgrade pinned source to $tag" --body "$body"
           else
