@@ -1,0 +1,286 @@
+name: Sync upstream repositories
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+  # Bootstrap once from the setup branch; future runs use schedule/dispatch.
+  push:
+    branches:
+      - automation/bootstrap-sync
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: sync-upstreams
+  cancel-in-progress: false
+
+jobs:
+  sync-store:
+    name: Sync Whexy CPA Store
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Merge upstream store and open/update PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/whexy/whexy-cpa-store.git
+          git fetch --no-tags upstream main
+          git fetch origin main
+
+          branch="automation/sync-whexy-store"
+          git checkout -B "$branch" origin/main
+
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "The fork already contains the current upstream main."
+            exit 0
+          fi
+
+          # Keep local versions of overlapping hunks (notably README.md).
+          # Non-conflicting upstream files, including plugin sources, still merge.
+          git merge --no-edit --no-ff -X ours upstream/main
+
+          # Upstream owns existing plugin entries; keep any local-only entries.
+          git show upstream/main:registry.json > "$RUNNER_TEMP/upstream-registry.json"
+          UPSTREAM_REGISTRY="$RUNNER_TEMP/upstream-registry.json" node <<'NODE'
+          const fs = require("node:fs");
+          const local = JSON.parse(fs.readFileSync("registry.json", "utf8"));
+          const upstream = JSON.parse(fs.readFileSync(process.env.UPSTREAM_REGISTRY, "utf8"));
+          const upstreamIds = new Set(upstream.plugins.map((plugin) => plugin.id));
+          const localOnly = local.plugins.filter((plugin) => !upstreamIds.has(plugin.id));
+          const plugins = [...upstream.plugins, ...localOnly].sort((a, b) => a.id.localeCompare(b.id));
+          fs.writeFileSync("registry.json", JSON.stringify({ ...upstream, plugins }, null, 2) + "\n");
+          NODE
+
+          # Keep the local README, but document newly synchronized upstream plugins.
+          python3 <<'PY'
+          from pathlib import Path
+
+          path = Path("README.md")
+          text = path.read_text()
+          marker = "- `usage-dashboard` — 展示 Token、估算费用和会话统计。"
+          replacement = (
+              "- `usage-dashboard` — 展示 Token、估算费用、会话统计及 Claude、Codex、Grok、Meta、OpenCode Go 额度。\n"
+              "- `reset-first` — 优先选择额度即将重置的 Claude / Codex 账号，并展示路由决策。"
+          )
+          if "`reset-first`" not in text and marker in text:
+              text = text.replace(marker, replacement)
+          path.write_text(text)
+          PY
+
+          git add registry.json README.md
+          git commit -m "chore(sync): merge Whexy CPA Store upstream"
+          git push --force origin "$branch"
+
+          body="$(cat <<'EOF'
+          ## 同步内容
+          - 合并 `whexy/whexy-cpa-store` 上游更新。
+          - 新增 Reset First 0.1.1。
+          - 更新 Usage Dashboard 至 0.6.0，包含 Grok、Meta、OpenCode Go 额度采集。
+          - 保留本仓库的 Playground、FreeTier2API、自有 Nix 构建和 CI。
+
+          ## 安全边界
+          - 不自动合并。
+          - 不创建公开 Release，不发布插件商店，不部署服务器。
+          - README 冲突优先保留本地版本；registry 以 upstream 同名条目为准，并保留本地独有条目。
+          EOF
+          )"
+
+          pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$GITHUB_REPOSITORY_OWNER:$branch" --state open --json number --jq '.[0].number // empty')"
+          if [[ -n "$pr" ]]; then
+            gh pr edit "$pr" --repo "$GITHUB_REPOSITORY" --title "chore(sync): merge Whexy CPA Store upstream" --body "$body"
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --title "chore(sync): merge Whexy CPA Store upstream" --body "$body"
+          fi
+
+          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$branch"
+
+  sync-freetier2api:
+    name: Upgrade pinned FreeTier2API source
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update existing upgrade PR and validate the plugin
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          repo="jiandanc/CLIProxyAPI-freetier2api-plugin"
+          release_json="$(curl -fsSL -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/$repo/releases/latest")"
+          tag="$(jq -r '.tag_name' <<<"$release_json")"
+          version="${tag#v}"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "Unexpected release tag: $tag" >&2
+            exit 1
+          }
+
+          ref_json="$(curl -fsSL -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/$repo/git/ref/tags/$tag")"
+          object_type="$(jq -r '.object.type' <<<"$ref_json")"
+          object_sha="$(jq -r '.object.sha' <<<"$ref_json")"
+          if [[ "$object_type" == "tag" ]]; then
+            tag_json="$(curl -fsSL -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/$repo/git/tags/$object_sha")"
+            revision="$(jq -r '.object.sha' <<<"$tag_json")"
+          else
+            revision="$object_sha"
+          fi
+          [[ "$revision" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "Could not resolve release tag $tag to a commit." >&2
+            exit 1
+          }
+
+          pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$GITHUB_REPOSITORY_OWNER:upgrade/freetier2api-e90609d" --state open --json number --jq '.[0].number // empty')"
+          if [[ -n "$pr" ]]; then
+            branch="upgrade/freetier2api-e90609d"
+          else
+            branch="automation/freetier2api-update"
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            git fetch origin "$branch"
+            git checkout -B "$branch" "origin/$branch"
+          else
+            git checkout -B "$branch" origin/main
+          fi
+
+          current_revision="$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+          text = Path("nix/packages/plugins/default.nix").read_text()
+          match = re.search(r'repo = "CLIProxyAPI-freetier2api-plugin";\s*rev = "([^"]+)"', text)
+          if not match:
+              raise SystemExit("Could not locate the pinned FreeTier2API revision")
+          print(match.group(1))
+          PY
+          )"
+          current_version="$(sed -n 's/^[[:space:]]*pluginVersion = "\([^"]*\)";/\1/p' plugins/freetier2api/go/main.go | head -n1)"
+
+          if [[ "$current_revision" == "$revision" && "$current_version" == "$version" ]]; then
+            echo "FreeTier2API is already at $tag ($revision)."
+            exit 0
+          fi
+
+          # Verify the prefetch method against the previously reviewed fixed hash.
+          known_hash="$(nix store prefetch-file --json --unpack --hash-type sha256 \
+            "https://github.com/$repo/archive/e90609d0138c0cfd7f1e00c0f8c827f8e5c22d11.tar.gz" | jq -r '.hash')"
+          if [[ "$known_hash" != "sha256-1sjaNXdr0Vop3Tty/gdCvmY2MLtOz97sJ1OuljmS4c4=" ]]; then
+            echo "Nix prefetch hash verification failed: $known_hash" >&2
+            exit 1
+          fi
+
+          hash="$(nix store prefetch-file --json --unpack --hash-type sha256 \
+            "https://github.com/$repo/archive/$revision.tar.gz" | jq -r '.hash')"
+          [[ "$hash" == sha256-* ]] || {
+            echo "Could not calculate a SRI source hash." >&2
+            exit 1
+          }
+
+          python3 - "$revision" "$hash" "$version" <<'PY'
+          import re
+          import sys
+          from pathlib import Path
+
+          revision, source_hash, version = sys.argv[1:]
+          path = Path("nix/packages/plugins/default.nix")
+          text = path.read_text()
+          pattern = r'(repo = "CLIProxyAPI-freetier2api-plugin";\s*rev = ")[^"]+(" ;?\s*hash = ")[^"]+(";)'
+          updated, count = re.subn(pattern, lambda m: m.group(1) + revision + m.group(2) + source_hash + m.group(3), text)
+          if count != 1:
+              # The source block uses no space before the semicolon.
+              pattern = r'(repo = "CLIProxyAPI-freetier2api-plugin";\s*rev = ")[^"]+(" ;?\s*hash = ")[^"]+(";)'
+              updated, count = re.subn(pattern, lambda m: m.group(1) + revision + m.group(2) + source_hash + m.group(3), text)
+          if count != 1:
+              raise SystemExit("Could not update exactly one pinned source block")
+          path.write_text(updated)
+
+          version_path = Path("plugins/freetier2api/go/main.go")
+          version_text, count = re.subn(
+              r'(pluginVersion = ")[^"]+(")',
+              lambda m: m.group(1) + version + m.group(2),
+              version_path.read_text(),
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit("Could not update pluginVersion placeholder")
+          version_path.write_text(version_text)
+
+          readme_path = Path("plugins/freetier2api/README.md")
+          readme = readme_path.read_text()
+          readme = re.sub(r'commit `[0-9a-f]{40}`', f'commit `{revision}`', readme, count=1)
+          readme_path.write_text(readme)
+
+          changelog_path = Path("plugins/freetier2api/CHANGELOG.md")
+          changelog = changelog_path.read_text()
+          heading = f"## {version}"
+          if heading not in changelog:
+              entry = (
+                  f"{heading}\n\n"
+                  f"- Upgrade the pinned source to upstream release [{version}](https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin/releases/tag/v{version}).\n"
+                  "- Preserve the local Cline Cloud classification and non-free-model default-deny patches.\n\n"
+              )
+              changelog = changelog.replace("# Changelog\n\n", "# Changelog\n\n" + entry, 1)
+              changelog_path.write_text(changelog)
+          PY
+
+          git add nix/packages/plugins/default.nix plugins/freetier2api/go/main.go plugins/freetier2api/README.md plugins/freetier2api/CHANGELOG.md
+          git commit -m "chore(freetier2api): upgrade pinned source to $tag"
+
+          # This also runs Go tests and checks that both local patches still apply.
+          nix build .#plugins.freetier2api --print-build-logs
+
+          git push origin "$branch"
+
+          body="$(cat <<EOF
+          ## Upgrade
+          - Upstream release: [$tag](https://github.com/$repo/releases/tag/$tag)
+          - Source commit: `$revision`
+          - Fixed Nix source hash: `$hash`
+
+          ## Local changes preserved
+          - Cline Cloud model classification patch.
+          - Non-free/unknown Cline model default-deny and explicit-enable patch.
+
+          ## Validation
+          - `nix build .#plugins.freetier2api --print-build-logs` passed before pushing.
+          - No automatic merge, release publishing, or server deployment.
+          EOF
+          )"
+
+          pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$GITHUB_REPOSITORY_OWNER:$branch" --state open --json number --jq '.[0].number // empty')"
+          if [[ -n "$pr" ]]; then
+            gh pr edit "$pr" --repo "$GITHUB_REPOSITORY" --title "chore(freetier2api): upgrade pinned source to $tag" --body "$body"
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --draft --title "chore(freetier2api): upgrade pinned source to $tag" --body "$body"
+          fi
+
+          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$branch"

@@ -13,7 +13,8 @@
 - `model-groups` — 将一个模型 ID 映射到多个候选模型，并支持轮询、加权轮询和 fill-first 路由。
 - `opencode-go` — 将 OpenCode Go 模型接入 CLIProxyAPI，并提供模型启停、OAuth/Key 管理和额度展示。
 - `system-prompt` — 按模型 ID 或匹配规则追加系统提示词。
-- `usage-dashboard` — 展示 Token、估算费用和会话统计。
+- `usage-dashboard` — 展示 Token、估算费用、会话统计及 Claude、Codex、Grok、Meta、OpenCode Go 额度。
+- `reset-first` — 优先选择额度即将重置的 Claude / Codex 账号，并展示路由决策。
 
 我们自己的插件：
 
@@ -69,3 +70,11 @@ GitHub Actions 产物可以在对应 workflow run 的 Artifacts 区域下载。�
 - 不要提交 API Key、OAuth token、认证 JSON、私钥或服务器配置。
 - Cline 免费模型的 `x-client-type: cline-cli` 是客户端标识，不是认证凭证；当前可用性是基于实测，服务端策略可能变化。
 - 本仓库仅构建测试，不自动发布任何插件，也不修改 1Panel 服务器。
+
+
+## 上游同步
+
+- `whexy/whexy-cpa-store`：每天检查上游插件商店更新，合并到独立分支并创建 PR；本地 README、Nix 构建定义和自有插件不会被上游覆盖。
+- `jiandanc/CLIProxyAPI-freetier2api-plugin`：每天检查最新正式 Release，更新固定源码 Commit 与 Nix SHA-256，保留本地 Cline 补丁；构建通过后更新升级 PR。
+- 两条同步通道均只创建/更新 PR，不自动合并、不创建公开 Release，也不部署到服务器。
+- 可在 GitHub Actions 中手动运行 **Sync upstream repositories**。
