@@ -73,7 +73,6 @@ GitHub Actions 产物可以在对应 workflow run 的 Artifacts 区域下载。�
 - Cline 免费模型的 `x-client-type: cline-cli` 是客户端标识，不是认证凭证；当前可用性是基于实测，服务端策略可能变化。
 - 本仓库仅构建测试，不自动发布任何插件，也不修改 1Panel 服务器。
 
-
 ## 上游同步
 
 - `whexy/whexy-cpa-store`：每天检查上游插件商店更新，合并到独立分支并创建 PR；本地 README、Nix 构建定义和自有插件不会被上游覆盖。
