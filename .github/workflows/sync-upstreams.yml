@@ -249,7 +249,11 @@ jobs:
           PY
 
           git add nix/packages/plugins/default.nix plugins/freetier2api/go/main.go plugins/freetier2api/README.md plugins/freetier2api/CHANGELOG.md
-          git commit -m "chore(freetier2api): upgrade pinned source to $tag"
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(freetier2api): upgrade pinned source to $tag"
+          else
+            echo "The pinned FreeTier2API source is already current; no commit is needed."
+          fi
 
           # This also runs Go tests and checks that both local patches still apply.
           nix build .#plugins.freetier2api --print-build-logs
