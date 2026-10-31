@@ -73,9 +73,9 @@ GitHub Actions 产物可以在对应 workflow run 的 Artifacts 区域下载。�
 - Cline 免费模型的 `x-client-type: cline-cli` 是客户端标识，不是认证凭证；当前可用性是基于实测，服务端策略可能变化。
 - 本仓库仅构建测试，不自动发布任何插件，也不修改 1Panel 服务器。
 
-## 上游同步
 
-- `whexy/whexy-cpa-store`：每天检查上游插件商店更新，合并到独立分支并创建 PR；本地 README、Nix 构建定义和自有插件不会被上游覆盖。
+## 上游同步
+- `whexy/whexy-cpa-store`：每天检查上游插件商店更新，合并到同步分支并创建 PR；本地 Nix 构建定义和自有插件不会被上游覆盖。
 - `jiandanc/CLIProxyAPI-freetier2api-plugin`：每天检查最新正式 Release，更新固定源码 Commit 与 Nix SHA-256，保留本地 Cline 补丁；构建通过后更新升级 PR。
 - 两条同步通道均只创建/更新 PR，不自动合并、不创建公开 Release，也不部署到服务器。
 - 可在 GitHub Actions 中手动运行 **Sync upstream repositories**。

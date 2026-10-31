@@ -116,6 +116,36 @@
       }
     },
     {
+      "id": "reset-first",
+      "name": "Reset First",
+      "description": "Sends each request to the account whose quota resets soonest among those serving the model, so what an account has left is spent before its reset loses it. Reads Codex and Claude quota from responses and their usage endpoints; a Management Center page shows each model's latest choice and why.",
+      "author": "Whexy",
+      "repository": "https://github.com/whexy/whexy-cpa-store",
+      "homepage": "https://github.com/whexy/whexy-cpa-store/tree/main/plugins/reset-first",
+      "logo": "https://raw.githubusercontent.com/whexy/whexy-cpa-store/main/plugins/reset-first/logo.svg",
+      "license": "MIT",
+      "tags": [
+        "routing",
+        "scheduler",
+        "quota",
+        "codex",
+        "claude"
+      ],
+      "version": "0.1.1",
+      "install": {
+        "type": "direct",
+        "artifacts": [
+          {
+            "goos": "linux",
+            "goarch": "amd64",
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/reset-first-v0.1.1/reset-first-v0.1.1-linux-amd64.zip",
+            "sha256": "a63c1abb44e657ceff49f5ee13e0bf18c013497fc55c8b3809def97f3e9f04d0",
+            "size": 3742782
+          }
+        ]
+      }
+    },
+    {
       "id": "system-prompt",
       "name": "System Prompts",
       "description": "Appends your own text to the system prompt of requests for the models you choose, before CLIProxyAPI translates or cloaks them. Rules pair model IDs or wildcard patterns with a prompt and are managed on a Management Center page.",
@@ -145,7 +175,7 @@
     {
       "id": "usage-dashboard",
       "name": "Usage Dashboard",
-      "description": "Adds a Usage page to Management Center: processed tokens, estimated cost, sessions and cache savings over the past day, week, month or quarter, grouped by model family or by account and kept on disk.",
+      "description": "Adds a Usage page to Management Center: processed tokens, estimated cost, sessions and cache savings over the past day, week, month or quarter, grouped by model family or by account and kept on disk, and the quota left in Claude, Codex, Grok, Meta and OpenCode Go accounts, recorded and projected.",
       "author": "Whexy",
       "repository": "https://github.com/whexy/whexy-cpa-store",
       "homepage": "https://github.com/whexy/whexy-cpa-store/tree/main/plugins/usage-dashboard",
@@ -157,16 +187,45 @@
         "cost",
         "dashboard"
       ],
-      "version": "0.3.1",
+      "version": "0.6.0",
       "install": {
         "type": "direct",
         "artifacts": [
           {
             "goos": "linux",
             "goarch": "amd64",
-            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/usage-dashboard-v0.3.1/usage-dashboard-v0.3.1-linux-amd64.zip",
-            "sha256": "5c7ec5eceb91b8bc912d083d6cb5c5de5a65e82af694f489d5d6115a0cb2f115",
-            "size": 3941437
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/usage-dashboard-v0.6.0/usage-dashboard-v0.6.0-linux-amd64.zip",
+            "sha256": "bfc23adf25bfb67cc5be3d666778458f3bae721a572bf4dfc6cbc345dc136cc5",
+            "size": 4008445
+          }
+        ]
+      }
+    },
+    {
+      "id": "zed",
+      "name": "Zed",
+      "description": "Serves a Zed account's hosted models through CLIProxyAPI. Claude, GPT and Gemini models come from the live Zed catalog with their own prefix, each in the protocol the client speaks, through a Zed sign-in from the OAuth Login page or an imported auth file, with a Management Center page that manages accounts and models, and plan and spend in the Plugin tab when a dashboard cookie is configured.",
+      "author": "Whexy",
+      "repository": "https://github.com/whexy/whexy-cpa-store",
+      "homepage": "https://github.com/whexy/whexy-cpa-store/tree/main/plugins/zed",
+      "logo": "https://raw.githubusercontent.com/whexy/whexy-cpa-store/main/plugins/zed/logo.svg",
+      "license": "MIT",
+      "tags": [
+        "zed",
+        "provider",
+        "executor",
+        "quota"
+      ],
+      "version": "0.1.1",
+      "install": {
+        "type": "direct",
+        "artifacts": [
+          {
+            "goos": "linux",
+            "goarch": "amd64",
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/zed-v0.1.1/zed-v0.1.1-linux-amd64.zip",
+            "sha256": "01e6cd4dd679ac12520fd1a005c6875140d10e0dc1d10a162ec8de71b6422317",
+            "size": 11303967
           }
         ]
       }

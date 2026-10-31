@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.6.0](https://github.com/whexy/whexy-cpa-store/compare/usage-dashboard-v0.5.0...usage-dashboard-v0.6.0) (2026-10-30)
+
+
+### Features
+
+* **usage-dashboard:** record Grok, Meta and OpenCode Go quota
+
+## [0.5.0](https://github.com/whexy/whexy-cpa-store/compare/usage-dashboard-v0.4.0...usage-dashboard-v0.5.0) (2026-10-29)
+
+
+### Features
+
+* **usage-dashboard:** measure burn rate over 5h, 24h, 48h or 72h
+
+## [0.4.0](https://github.com/whexy/whexy-cpa-store/compare/usage-dashboard-v0.3.1...usage-dashboard-v0.4.0) (2026-10-26)
+
+
+### Features
+
+* **usage-dashboard:** record Claude and Codex quota and chart each pool
+
 ## [0.3.1](https://github.com/whexy/whexy-cpa-store/compare/usage-dashboard-v0.3.0...usage-dashboard-v0.3.1) (2026-10-17)
 
 

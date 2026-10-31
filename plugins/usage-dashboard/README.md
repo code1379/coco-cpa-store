@@ -3,9 +3,9 @@
 A CLIProxyAPI usage plugin that adds a Usage page to Management Center:
 processed tokens and estimated cost over the past 24 hours, 7, 30 or 90 days,
 grouped by model family or by account, with sessions, cache savings and a
-per-model or per-day breakdown. CLIProxyAPI cannot tell which client sent a
-request, so the page groups by what it does know: the model and the
-credential that served it.
+per-model or per-day breakdown, and the quota left in your Claude, Codex,
+Grok, Meta and OpenCode Go accounts. CLIProxyAPI cannot tell which client sent a request, so the page
+groups by what it does know: the model and the credential that served it.
 
 ## Set up
 
@@ -32,6 +32,26 @@ characters. An account removed from CLIProxyAPI keeps the name it had.
 Each family or account keeps its colour across ranges. Past eight, the
 smallest fold into Other.
 
+## Quota
+
+Claude and Codex report each account's rate-limit windows in the headers of
+every response, and the plugin records them as requests pass. Grok, Meta and
+OpenCode Go send none, so every 15 minutes the plugin reads their quota from
+the same usage endpoints Management Center's Quota page reads, using the
+credential in each account's auth file; nothing read from an auth file is
+kept. Set `quota_poll_interval: off` to record only what responses carry. The
+Quota section draws one chart per provider: the pool of its longest window,
+usually the weekly limit, summed over its enabled accounts, as recorded and
+as projected. An account joins once a request through CLIProxyAPI has
+reported its quota, or once a poll has read it. A Grok account on the paid
+API has no subscription windows to read and stays unreported.
+
+The projection continues the burn measured over the last 1, 3, 6 or 24
+hours, or the average since each window opened when less than 15 minutes of
+that was recorded. It spreads the burn evenly over the accounts with quota
+left, as round-robin routing does, and each reset restores its account to
+100%. Future usage scales the burn.
+
 ## Data
 
 Usage is kept as hourly totals per account and model, one file per UTC day
@@ -42,7 +62,9 @@ else `config.yaml` in its working directory). With `dir: /data/plugins`, that
 is `/data/data/usage-dashboard`. Set `data_dir` when CLIProxyAPI takes its
 config from elsewhere (`-home-jwt`, a Postgres, git or object store), or when
 only the plugins directory itself is a volume, as in CLIProxyAPI's
-`docker-compose.yml`. Days past `retention_days` are deleted. Prompts,
+`docker-compose.yml`. Days past `retention_days` are deleted. The day files
+also keep quota readings: one when a window of a day or longer changes or a
+window resets, and one at least every 30 minutes while requests flow. Prompts,
 responses and client API keys are never stored, and session IDs only as
 hashes.
 
@@ -75,6 +97,9 @@ configuration form in Management Center:
 - `pricing`: `false` turns cost estimates off. Default `true`.
 - `pricing_url`: a models.dev-format catalog. Default
   `https://models.dev/api.json`.
+- `quota_poll_interval`: how often Grok, Meta and OpenCode Go quota is read
+  from their usage endpoints, as a duration such as `15m`. Default `15m`, at
+  least `1m`; `off` turns polling off.
 - `model_families`: globs over the model ID mapped to a family, checked
   before the built-in list:
 
@@ -91,6 +116,12 @@ All take the management key as `Authorization: Bearer <key>`.
 `GET /v0/management/usage-dashboard/summary?range=24h|7d|30d|90d&group=family|account&tz=<IANA zone>`
 answers the totals, one series per group, per-model rows and per-point rows
 for the range. Day ranges end with today in `tz`.
+
+`GET /v0/management/usage-dashboard/quota?from=<RFC 3339 time>` lists the
+accounts of every provider whose quota is recorded that CLIProxyAPI routes
+to, each with its quota readings
+since `from` (default 17 days ago) and the last one before it. A reading's
+`at` and a window's `reset_at` are Unix milliseconds.
 
 `GET /v0/management/usage-dashboard/prices` lists every model in the kept
 usage with its processed tokens, custom price and models.dev price.
