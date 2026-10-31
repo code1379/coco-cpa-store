@@ -84,7 +84,11 @@ jobs:
           PY
 
           git add registry.json README.md
-          git commit -m "chore(sync): merge Whexy CPA Store upstream"
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(sync): update local registry and documentation"
+          fi
+          # The upstream merge itself may be the only new commit. Do not fail
+          # just because the local registry and README needed no extra edits.
           git push --force origin "$branch"
 
           body="$(cat <<'EOF'
