@@ -1,6 +1,6 @@
 # FreeTier 2API (pinned upstream build)
 
-This package builds the upstream [CLIProxyAPI-freetier2api-plugin](https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin) at pinned commit `ddee2d93c74386256cd8b2ca6e6474dc01d81b34` using this repository's Nix build pipeline.
+This package builds the upstream [CLIProxyAPI-freetier2api-plugin](https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin) at pinned commit `bbcc548ea60a6dd028299352f6a491549bafbb1f` using this repository's Nix build pipeline.
 
 The upstream project is MIT licensed. Its README restricts use to personal learning and technical research and prohibits commercial sale, API resale, paid hosting, automated reward farming, and public shared pools. Keep those limits in mind and follow each upstream provider's terms.
 

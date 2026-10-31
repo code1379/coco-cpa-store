@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.24
+
+- Upgrade the pinned source to upstream release [0.1.24](https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin/releases/tag/v0.1.24).
+- Preserve the local Cline Cloud classification and non-free-model default-deny patches.
+
 ## 0.1.23
 
 - Upgrade the pinned source to upstream release [0.1.23](https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin/releases/tag/v0.1.23).
