@@ -13,7 +13,8 @@
 - `model-groups` — 将一个模型 ID 映射到多个候选模型，并支持轮询、加权轮询和 fill-first 路由。
 - `opencode-go` — 将 OpenCode Go 模型接入 CLIProxyAPI，并提供模型启停、OAuth/Key 管理和额度展示。
 - `system-prompt` — 按模型 ID 或匹配规则追加系统提示词。
-- `usage-dashboard` — 展示 Token、估算费用和会话统计。
+- `usage-dashboard` — 展示 Token、估算费用、会话统计及 Claude、Codex、Grok、Meta、OpenCode Go 额度。
+- `reset-first` — 优先选择额度即将重置的 Claude / Codex 账号，并展示路由决策。
 
 我们自己的插件：
 
