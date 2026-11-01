@@ -3,15 +3,17 @@ name: Personal CI
 on:
   push:
     branches:
-      - "**"
+      - main
   pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: personal-ci-${{ github.workflow }}-${{ github.ref }}-${{ github.sha }}
+  group: personal-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
