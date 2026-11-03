@@ -7,8 +7,8 @@
 let
   inherit (pkgs) lib;
   pluginsDir = flake + "/plugins";
-  # The local placeholder carries the pinned upstream release version. It drives
-  # both the package/ZIP version and the version injected into the running plugin.
+  # Artifacts carry the version the plugin reports to the host: the
+  # pluginVersion constant in go/main.go, 0.0.0 until its first release.
   versionOf =
     id:
     let
@@ -84,75 +84,14 @@ let
       buildPhase = ''
         runHook preBuild
         if [[ "${id}" == "freetier2api" ]]; then
-          # Verify the Go linker override against the exact package variable.
-          # Avoid empty single-quoted arguments: Nix indented strings use two quotes as a delimiter.
+          # Verify that Go -X changes the exact version variable used by the plugin.
           printf '%s\n' \
             'package main' \
             'import "testing"' \
-            'func TestPluginVersionLinkerInjection(t *testing.T) { if pluginVersion != "freetier2api-linker-check" { t.Fatalf("unexpected pluginVersion: %q", pluginVersion) } }' \
+            'func TestPluginVersionLinkerInjection(t *testing.T) { if pluginVersion != "freetier2api-linker-check" { t.Fatal(pluginVersion) } }' \
             > version_injection_check_test.go
           go test -run TestPluginVersionLinkerInjection -ldflags "-X main.pluginVersion=freetier2api-linker-check" .
           rm version_injection_check_test.go
-          # Inject the package version reported by pluginApp.Version().
-          go build -trimpath -buildmode=c-shared -ldflags "-X main.pluginVersion=${versionOf id}" -o "${id}.so" .
-        else
-          go build -trimpath -buildmode=c-shared -o "${id}.so" .
-        fi
-        runHook postBuild
-      '';
-      doCheck = true;
-      # Tests of a plugin's management page script run under node.
-      nativeCheckInputs = [ pkgs.nodejs_24 ];
-      checkPhase = ''
-        runHook preCheck
-        # Nix builds commonly set HOME to /homeless-shelter, which is not writable.
-        # Some integration tests exercise plugin state persistence under the user's home.
-        export HOME="$TMPDIR/plugin-test-home"
-        mkdir -p "$HOME"
-        export XDG_CONFIG_HOME="$HOME/.config"
-        export XDG_CACHE_HOME="$HOME/.cache"
-        mkdir -p "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME"
-        go test ./...
-        runHook postCheck
-      '';
-
-      installPhase = ''
-        runHook preInstall
-        install -Dm755 "${id}.so" "$out/${id}.so"
-        runHook postInstall
-      '';
-
-      meta.platforms = [ "x86_64-linux" ];
-    };
-
-  # The store installs <id>-v<version>-<goos>-<goarch>.zip holding
-  # <id>-v<version>.so at its root.
-  packZip =
-    id:
-    let
-      name = "${id}-v${versionOf id}";
-    in
-    pkgs.runCommand "${name}-linux-amd64" { nativeBuildInputs = [ pkgs.zip ]; } ''
-      # cp -p keeps the store's normalized mtime and zip -X drops extended
-      # attributes, so a rerun of a release reproduces the published bytes.
-      cp -p "${buildLibrary id}/${id}.so" "${name}.so"
-      mkdir -p "$out"
-      zip -X -j "$out/${name}-linux-amd64.zip" "${name}.so"
-    '';
-
-  zips = lib.genAttrs pluginIds packZip;
-in
-# Release pipelines build one plugin as .#plugins.<id>; the joined output keeps
-# nix flake check building and testing every plugin.
-pkgs.symlinkJoin {
-  name = "whexy-cpa-store-plugins";
-  paths = builtins.attrValues zips;
-  passthru = zips;
-  meta.platforms = [ "x86_64-linux" ];
-}
- -ldflags "-X main.pluginVersion=freetier2api-linker-check" .
-          rm version_injection_check_test.go
-          # This same linker target injects the package version reported by pluginApp.Version().
           go build -trimpath -buildmode=c-shared -ldflags "-X main.pluginVersion=${versionOf id}" -o "${id}.so" .
         else
           go build -trimpath -buildmode=c-shared -o "${id}.so" .
