@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -11,6 +12,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginabi"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginapi"
@@ -128,6 +130,26 @@ func TestLoginListenerRedirectsOnlyAValidCallback(t *testing.T) {
 	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusFound || !strings.Contains(resp.Header.Get("Location"), "native_app_signin_succeeded") {
 		t.Fatalf("valid callback answered %d %q", resp.StatusCode, resp.Header.Get("Location"))
+	}
+	// The handler flushes the browser redirect before publishing the login
+	// result, so receiving the redirect may still leave the flow pending.
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		done := logins.poll(ctx, newHost(""), currentSettings(), flow.State)
+		if done.Status == pluginapi.AuthLoginStatusSuccess {
+			break
+		}
+		if done.Status != pluginapi.AuthLoginStatusPending {
+			t.Fatalf("callback completion: %+v", done)
+		}
+		select {
+		case <-ctx.Done():
+			t.Fatalf("callback did not complete: %+v (%v)", done, ctx.Err())
+		case <-ticker.C:
+		}
 	}
 	for attempt := 0; attempt < 2; attempt++ {
 		// A repeated poll, as after a failed save, gets the same account.
