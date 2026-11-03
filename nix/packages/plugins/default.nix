@@ -84,23 +84,27 @@ let
       buildPhase = ''
         runHook preBuild
         if [[ "${id}" == "freetier2api" ]]; then
-          # Verify Go -X against the exact package variable before building the shared library.
-          # go version -m does not reliably expose -X settings for c-shared artifacts.
-          cat > version_injection_check_test.go <<'EOF'
-package main
-
-import "testing"
-
-func TestPluginVersionLinkerInjection(t *testing.T) {
-	const expected = "freetier2api-linker-check"
-	if pluginVersion != expected {
-		t.Fatalf("pluginVersion = %q, want %q", pluginVersion, expected)
-	}
-}
-EOF
-          go test -run '^TestPluginVersionLinkerInjection        runHook postBuild
+          # Verify the Go linker override against the exact package variable.
+          # Use printf rather than a nested heredoc inside the Nix indented string.
+          printf '%s\n' \
+            'package main' \
+            '' \
+            'import "testing"' \
+            '' \
+            'func TestPluginVersionLinkerInjection(t *testing.T) {' \
+            '  if pluginVersion != "freetier2api-linker-check" {' \
+            '    t.Fatalf("unexpected pluginVersion: %q", pluginVersion)' \
+            '  }' \
+            '}' > version_injection_check_test.go
+          go test -run TestPluginVersionLinkerInjection -ldflags "-X main.pluginVersion=freetier2api-linker-check" .
+          rm version_injection_check_test.go
+          # Inject the package version reported by pluginApp.Version().
+          go build -trimpath -buildmode=c-shared -ldflags "-X main.pluginVersion=${versionOf id}" -o "${id}.so" .
+        else
+          go build -trimpath -buildmode=c-shared -o "${id}.so" .
+        fi
+        runHook postBuild
       '';
-
       doCheck = true;
       # Tests of a plugin's management page script run under node.
       nativeCheckInputs = [ pkgs.nodejs_24 ];
