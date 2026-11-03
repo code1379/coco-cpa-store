@@ -184,8 +184,9 @@ jobs:
           PY
           )"
           current_version="$(sed -n 's/^[[:space:]]*pluginVersion = "\([^"]*\)"[[:space:]]*$/\1/p' plugins/freetier2api/go/main.go | head -n1)"
+          current_upstream_version="${current_version%%-store.*}"
 
-          if [[ "$current_source" == "$repo/$revision" && "$current_version" == "$version" ]]; then
+          if [[ "$current_source" == "$repo/$revision" && "$current_upstream_version" == "$version" ]]; then
             echo "FreeTier2API is already at $tag ($revision)."
             exit 0
           fi
