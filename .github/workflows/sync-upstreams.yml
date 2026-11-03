@@ -137,7 +137,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          repo="jiandanc/CLIProxyAPI-freetier2api-plugin"
+          repo="cxy2730/CLIProxyAPI-freetier2api-plugin"
           release_json="$(curl -fsSL -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/$repo/releases/latest")"
           tag="$(jq -r '.tag_name' <<<"$release_json")"
           version="${tag#v}"
@@ -161,7 +161,7 @@ jobs:
           }
 
           # Keep using the existing upgrade PR branch so its review history is preserved.
-          branch="upgrade/freetier2api-e90609d"
+          branch="upgrade/freetier2api"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -241,7 +241,7 @@ jobs:
           if heading not in changelog:
               entry = (
                   f"{heading}\n\n"
-                  f"- Upgrade the pinned source to upstream release [{version}](https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin/releases/tag/v{version}).\n"
+                  f"- Upgrade the pinned source to upstream release [{version}](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin/releases/tag/v{version}).\n"
                   "- Preserve the local Cline Cloud classification and non-free-model default-deny patches.\n\n"
               )
               changelog = changelog.replace("# Changelog\n\n", "# Changelog\n\n" + entry, 1)
