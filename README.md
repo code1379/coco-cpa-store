@@ -85,6 +85,7 @@ FreeTier2API 不在本仓库复制或长期分叉上游源码，采用「上游�
 - 本仓库仅构建测试，不自动发布任何插件，也不修改 1Panel 服务器。
 
 ## 上游同步
+
 - `whexy/whexy-cpa-store`：每天检查上游插件商店更新，合并到同步分支并创建 PR；本地 Nix 构建定义和自有插件不会被上游覆盖。
 - `cxy2730/CLIProxyAPI-freetier2api-plugin`：每天检查最新正式 Release，更新固定源码 Commit 与 Nix SHA-256，保留本地 Cline 补丁；构建通过后更新升级 PR。
 - 两条同步通道均只创建/更新 PR，不自动合并、不创建公开 Release，也不部署到服务器。
