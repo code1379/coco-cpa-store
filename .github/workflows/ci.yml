@@ -1,10 +1,14 @@
 name: Personal CI
 
 on:
+  # Run on the protected integration branch after merge.
   push:
     branches:
-      - "**"
+      - main
+  # Feature branches are validated through their PR, not by a duplicate push run.
   pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
