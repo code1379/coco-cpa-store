@@ -7,8 +7,8 @@
 let
   inherit (pkgs) lib;
   pluginsDir = flake + "/plugins";
-  # Artifacts carry the version the plugin reports to the host: the
-  # pluginVersion constant in go/main.go, 0.0.0 until its first release.
+  # The local placeholder carries the pinned upstream release version. It drives
+  # both the package/ZIP version and the version injected into the running plugin.
   versionOf =
     id:
     let
@@ -53,10 +53,10 @@ let
       src =
         if id == "freetier2api" then
           pkgs.fetchFromGitHub {
-            owner = "jiandanc";
+            owner = "cxy2730";
             repo = "CLIProxyAPI-freetier2api-plugin";
-            rev = "ddee2d93c74386256cd8b2ca6e6474dc01d81b34";
-            hash = "sha256-Hrq1nJoHk+2JicjS6wrgFvdwMhFcowv4Ic+TIpFdE10=";
+            rev = "f60ab60cb9cad0a0485bda8c4a8087b5859bc099";
+            hash = lib.fakeHash;
           }
         else
           builtins.path {
@@ -64,10 +64,6 @@ let
             path = pluginsDir + "/${id}/go";
           };
 
-      postPatch = lib.optionalString (id == "freetier2api") ''
-        substituteInPlace main.go \
-          --replace-fail 'var pluginVersion = app.DefaultVersion' 'var pluginVersion = "${versionOf id}"'
-      '';
       patches =
         if id == "freetier2api" then
           let
@@ -87,7 +83,19 @@ let
       # cgo-produced shared library, not a regular binary.
       buildPhase = ''
         runHook preBuild
-        go build -trimpath -buildmode=c-shared -o "${id}.so" .
+        build_flags=()
+        if [[ "${id}" == "freetier2api" ]]; then
+          # Inject the version into the Go variable used by pluginApp.Version().
+          # This changes the runtime-reported version, not only the ZIP filename.
+          build_flags=(-ldflags "-X main.pluginVersion=${versionOf id}")
+        fi
+        go build -trimpath -buildmode=c-shared "${build_flags[@]}" -o "${id}.so" .
+        if [[ "${id}" == "freetier2api" ]]; then
+          go version -m "${id}.so" | grep -F -- "main.pluginVersion=${versionOf id}" >/dev/null || {
+            echo "Compiled FreeTier2API runtime version does not match ${versionOf id}" >&2
+            exit 1
+          }
+        fi
         runHook postBuild
       '';
 
