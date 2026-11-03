@@ -1,0 +1,149 @@
+--- a/internal/app/main.go
++++ b/internal/app/main.go
+@@ -17,7 +17,7 @@
+ )
+ 
+ const (
+-	pluginID          = "freetier"
++	pluginID          = "freetier2api"
+ 	pluginDisplayName = "FreeTier 2API"
+ 	pluginAuthor      = "cxy2730"
+ 	pluginRepository  = "https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin"
+--- /dev/null
++++ b/internal/app/store_namespace_test.go
+@@ -0,0 +1,58 @@
++package app
++
++import (
++	"encoding/json"
++	"net/http"
++	"strings"
++	"testing"
++
++	"freetier2api-plugin/cpasdk/pluginabi"
++	"freetier2api-plugin/cpasdk/pluginapi"
++)
++
++func TestStoreManagementNamespace(t *testing.T) {
++	instance := MustNew(Options{})
++	registration := instance.managementRegistration()
++	foundStatus := false
++	for _, route := range registration.Routes {
++		if !strings.HasPrefix(route.Path, "/plugins/freetier2api/") {
++			t.Fatalf("route outside the installed plugin namespace: %s", route.Path)
++		}
++		foundStatus = foundStatus || route.Path == "/plugins/freetier2api/status"
++	}
++	if !foundStatus {
++		t.Fatal("status route missing")
++	}
++	if len(registration.Resources) != 1 || registration.Resources[0].Path != "/console" {
++		t.Fatalf("console resource: %+v", registration.Resources)
++	}
++	request, err := json.Marshal(pluginapi.ManagementRequest{
++		Method: http.MethodGet, Path: "/v0/resource/plugins/freetier2api/console",
++	})
++	if err != nil {
++		t.Fatal(err)
++	}
++	raw, err := instance.HandleMethod(pluginabi.MethodManagementHandle, request)
++	if err != nil {
++		t.Fatal(err)
++	}
++	var envelope struct {
++		OK     bool                         `json:"ok"`
++		Result pluginapi.ManagementResponse `json:"result"`
++	}
++	if err := json.Unmarshal(raw, &envelope); err != nil {
++		t.Fatal(err)
++	}
++	if !envelope.OK || envelope.Result.StatusCode != http.StatusOK {
++		t.Fatalf("store console: %s", raw)
++	}
++	if !strings.Contains(string(envelope.Result.Body), `var BASE = "/plugins/freetier2api";`) {
++		t.Fatal("console uses the wrong management API prefix")
++	}
++	if !strings.Contains(string(envelope.Result.Body), `hostPath(BASE + "/config")`) {
++		t.Fatal("console config calls must use the installed management namespace")
++	}
++	if providerKey != "freetier" {
++		t.Fatalf("existing credential provider changed: %q", providerKey)
++	}
++}
+--- a/internal/admin/console.html
++++ b/internal/admin/console.html
+@@ -2064,7 +2064,7 @@
+     modelSyncTimer = null;
+     if (modelSyncRunning) { modelSyncPending = true; return; }
+     modelSyncRunning = true;
+-    var configPath = hostPath("/plugins/freetier/config");
++    var configPath = hostPath(BASE + "/config");
+     api("GET", configPath).then(function (config) {
+       // GET 返回的可能是空对象（该插件段尚未落过自定义配置），补成对象再合并。
+       var body = (config && typeof config === "object") ? config : {};
+--- a/internal/admin/console_test.go
++++ b/internal/admin/console_test.go
+@@ -558,7 +558,7 @@
+ 	for _, literal := range []string{
+ 		"syncModelConfig",                      // 同步入口
+ 		"config_reloaded_at",                   // 制造配置内容变化的键
+-		`hostPath("/plugins/freetier/config")`, // 宿主插件配置路由
++		`hostPath(BASE + "/config")`, // 宿主插件配置路由
+ 		`api("PATCH", configPath`,              // 浅合并写配置，触发宿主重载
+ 	} {
+ 		if !strings.Contains(page, literal) {
+--- a/registry.json
++++ b/registry.json
+@@ -2,7 +2,7 @@
+   "schema_version": 1,
+   "plugins": [
+     {
+-      "id": "freetier",
++      "id": "freetier2api",
+       "name": "FreeTier 2API",
+       "description": "把多个免费额度供应商（WorkBuddy 国内版/国际版、Qoder 国内版/国际版、OpenCode ZEN、Cline、ZCode 国内版/国际版、Trae 国内版/国际版、CodeArts、MiniMax Code 国内版/国际版、AutoClaw 国内版/国际版、小浣熊）接入 CLIProxyAPI：auth / model / executor / quota / management 五类能力，按供应商插桩，支持凭证归属隔离、模型清单动态探测、额度查询与每日签到。",
+       "author": "cxy2730",
+--- a/tests/integration/activity_probe_test.go
++++ b/tests/integration/activity_probe_test.go
+@@ -86,7 +86,7 @@
+ func previewActivities(t *testing.T, accountID string) activitiesPreviewResponse {
+ 	t.Helper()
+ 	raw, err := testApp.HandleMethod(pluginabi.MethodManagementHandle, mustMarshal(pluginapi.ManagementRequest{
+-		Method: "POST", Path: "/v0/management/plugins/freetier/activities/preview",
++		Method: "POST", Path: "/v0/management/plugins/freetier2api/activities/preview",
+ 		Headers: http.Header{"X-Host-Callback-Id": []string{testCallbackID}}, Body: []byte(`{"account_id":"` + accountID + `"}`),
+ 	}))
+ 	if err != nil {
+--- a/tests/integration/management_resilience_test.go
++++ b/tests/integration/management_resilience_test.go
+@@ -196,7 +196,7 @@
+ 	cancel()
+ 	raw, errHandle := testApp.HandleMethod(pluginabi.MethodManagementHandle, mustMarshal(pluginapi.ManagementRequest{
+ 		Method: method,
+-		Path:   "/v0/management/plugins/freetier" + path,
++		Path:   "/v0/management/plugins/freetier2api" + path,
+ 		Headers: http.Header{
+ 			"X-Host-Callback-Id": []string{testCallbackID},
+ 		},
+--- a/tests/integration/testutil_test.go
++++ b/tests/integration/testutil_test.go
+@@ -222,7 +222,7 @@
+ 	t.Helper()
+ 	request := pluginapi.ManagementRequest{
+ 		Method:  method,
+-		Path:    "/v0/management/plugins/freetier" + path,
++		Path:    "/v0/management/plugins/freetier2api" + path,
+ 		Headers: http.Header{"X-Host-Callback-Id": []string{testCallbackID}},
+ 	}
+ 	if body != nil {
+--- a/tests/integration/registry_test.go
++++ b/tests/integration/registry_test.go
+@@ -90,7 +90,7 @@
+ //
+ // 宿主按 {id}{ext} 找动态库；ID 与文件名不一致会让插件静默不被加载。
+ func TestPluginIDMatchesLibraryName(t *testing.T) {
+-	if app.PluginID != "freetier" {
++	if app.PluginID != "freetier2api" {
+ 		t.Fatalf("app.PluginID = %q; changing it requires renaming the build output and registry", app.PluginID)
+ 	}
+ 	if app.ProviderKey != core.ProviderKey {
