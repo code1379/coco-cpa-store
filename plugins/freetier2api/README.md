@@ -21,6 +21,6 @@ These patches are intentionally separate from upstream source. When upstream cha
 go build -buildmode=c-shared -ldflags "-X main.pluginVersion=<version>"
 ```
 
-This linker injection changes the version reported by the running plugin itself; it is not just a filename rename. CI checks the compiled Go build metadata for the injected version so the archive name and runtime-reported version cannot silently diverge.
+This linker injection changes the version reported by the running plugin itself; it is not just a filename rename. Before building the shared library, CI runs a Go test with the same `-X` mechanism and asserts that the `pluginVersion` variable receives the injected value. The final shared-library build uses that same linker setting.
 
 The source commit and Nix source hash are pinned in `nix/packages/plugins/default.nix`. The scheduled sync workflow updates those values from the latest upstream formal release and opens an upgrade PR; it does not auto-merge or deploy.
