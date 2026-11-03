@@ -7,8 +7,8 @@
 let
   inherit (pkgs) lib;
   pluginsDir = flake + "/plugins";
-  # Artifacts carry the version the plugin reports to the host: the
-  # pluginVersion constant in go/main.go, 0.0.0 until its first release.
+  # The local pluginVersion placeholder is the package/ZIP version. For
+  # FreeTier2API, postPatch writes that exact version into upstream main.go.
   versionOf =
     id:
     let
@@ -78,24 +78,35 @@ let
         else
           [ ];
       vendorHash = import (pluginsDir + "/${id}/vendor-hash.nix");
+      postPatch = lib.optionalString (id == "freetier2api") ''
+        # Upstream main.go initializes pluginVersion from app.DefaultVersion.
+        # Replace the declaration itself so App.Version() reports our pinned package version.
+        substituteInPlace main.go \
+          --replace-fail 'var pluginVersion = app.DefaultVersion' 'var pluginVersion = "${versionOf id}"'
+      '';
 
       # Plugins are loaded through the CLIProxyAPI C ABI, so the artifact is a
       # cgo-produced shared library, not a regular binary.
       buildPhase = ''
         runHook preBuild
         if [[ "${id}" == "freetier2api" ]]; then
-          # Verify that Go -X changes the exact version variable used by the plugin.
-          printf '%s\n' \
-            'package main' \
-            'import "testing"' \
-            'func TestPluginVersionLinkerInjection(t *testing.T) { if pluginVersion != "freetier2api-linker-check" { t.Fatal(pluginVersion) } }' \
-            > version_injection_check_test.go
-          go test -run TestPluginVersionLinkerInjection -ldflags "-X main.pluginVersion=freetier2api-linker-check" .
+          # Verify the actual version exposed by the App used by the C ABI.
+          cat > version_injection_check_test.go <<'GO_TEST'
+package main
+
+import "testing"
+
+func TestPluginVersionMatchesPackage(t *testing.T) {
+    const expected = "${versionOf id}"
+    if got := pluginApp.Version(); got != expected {
+        t.Fatalf("plugin version = %q, want %q", got, expected)
+    }
+}
+GO_TEST
+          go test -run '^TestPluginVersionMatchesPackage$' .
           rm version_injection_check_test.go
-          go build -trimpath -buildmode=c-shared -ldflags "-X main.pluginVersion=${versionOf id}" -o "${id}.so" .
-        else
-          go build -trimpath -buildmode=c-shared -o "${id}.so" .
         fi
+        go build -trimpath -buildmode=c-shared -o "${id}.so" .
         runHook postBuild
       '';
 

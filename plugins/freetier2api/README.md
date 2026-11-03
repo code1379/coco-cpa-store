@@ -15,12 +15,10 @@ These patches are intentionally separate from upstream source. When upstream cha
 
 ## Versioning and build
 
-`go/main.go` in this directory is Nix package metadata, not a copied implementation. Nix reads its `pluginVersion` value for the package and ZIP version, then injects the same value into the upstream Go build using:
+`go/main.go` in this directory is Nix package metadata, not a copied implementation. Nix reads its `pluginVersion` value for the package and ZIP version.
 
-```bash
-go build -buildmode=c-shared -ldflags "-X main.pluginVersion=<version>"
-```
+For FreeTier2API, the Nix `postPatch` phase replaces the upstream declaration `var pluginVersion = app.DefaultVersion` with the exact pinned package version before compilation. This is deliberately a source-level replacement rather than `-ldflags -X`: the upstream module path is `freetier2api-plugin`, so the earlier `-X main.pluginVersion` target did not address the real Go linker symbol.
 
-This linker injection changes the version reported by the running plugin itself; it is not just a filename rename. Before building the shared library, CI runs a Go test with the same `-X` mechanism and asserts that the `pluginVersion` variable receives the injected value. The final shared-library build uses that same linker setting.
+Before building the shared library, CI runs a temporary Go test that asserts `pluginApp.Version()` returns the pinned package version. The same patched source is then compiled into the final `.so`, so the ZIP filename and runtime-reported version share one source of truth.
 
 The source commit and Nix source hash are pinned in `nix/packages/plugins/default.nix`. The scheduled sync workflow updates those values from the latest upstream formal release and opens an upgrade PR; it does not auto-merge or deploy.
