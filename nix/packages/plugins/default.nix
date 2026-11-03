@@ -83,13 +83,13 @@ let
       # cgo-produced shared library, not a regular binary.
       buildPhase = ''
         runHook preBuild
-        build_flags=()
         if [[ "${id}" == "freetier2api" ]]; then
           # Inject the version into the Go variable used by pluginApp.Version().
           # This changes the runtime-reported version, not only the ZIP filename.
-          build_flags=(-ldflags "-X main.pluginVersion=${versionOf id}")
+          go build -trimpath -buildmode=c-shared -ldflags "-X main.pluginVersion=${versionOf id}" -o "${id}.so" .
+        else
+          go build -trimpath -buildmode=c-shared -o "${id}.so" .
         fi
-        go build -trimpath -buildmode=c-shared "${build_flags[@]}" -o "${id}.so" .
         if [[ "${id}" == "freetier2api" ]]; then
           go version -m "${id}.so" | grep -F -- "main.pluginVersion=${versionOf id}" >/dev/null || {
             echo "Compiled FreeTier2API runtime version does not match ${versionOf id}" >&2
