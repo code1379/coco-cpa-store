@@ -122,6 +122,9 @@ GO_TEST
         export XDG_CONFIG_HOME="$HOME/.config"
         export XDG_CACHE_HOME="$HOME/.cache"
         mkdir -p "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME"
+        # Qoder runtime-info needs host machine identity unavailable in Nix sandbox.
+        # The embedded asset extraction test and all other Go tests still run.
+        export FREETIER2API_SKIP_EMBEDDED_IDENTITY_EXECUTION=1
         go test ./...
         runHook postCheck
       '';

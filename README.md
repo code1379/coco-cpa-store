@@ -72,7 +72,7 @@ GitHub Actions 产物可以在对应 workflow run 的 Artifacts 区域下载。�
 FreeTier2API 不在本仓库复制或长期分叉上游源码，采用「上游固定版本 + 本地补丁」：
 
 1. 从 [cxy2730/CLIProxyAPI-freetier2api-plugin](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin) 获取正式 Release，并固定对应 commit 与 Nix 源码哈希。
-2. 本仓库只保留自己的差异补丁，放在 `plugins/freetier2api/patches/`，按文件名顺序应用；目前包括 Cline Cloud 模型分类，以及非免费/未知模型默认禁用策略。
+2. 本仓库只保留自己的差异补丁，放在 `plugins/freetier2api/patches/`，按文件名顺序应用；包括 Cline Cloud 模型分类、非免费/未知模型默认禁用策略，以及仅供 Nix 隔离测试环境使用的 Qoder 机器身份测试跳过补丁（不改变运行时行为）。
 3. Nix 从上游源码构建，先应用本地补丁，再在 `postPatch` 阶段把上游 `main.go` 的默认版本声明替换为固定包版本，并通过 Go 测试验证 `pluginApp.Version()`。ZIP 文件名、包版本和插件向 CPA 报告的版本必须一致。
 4. CI 执行补丁应用、Go 测试、动态库构建和版本元数据检查。上游升级只更新版本、commit 与源码哈希，不把上游代码复制进本仓库。
 

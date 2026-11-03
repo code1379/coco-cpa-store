@@ -1,0 +1,12 @@
+diff --git a/internal/vendors/qoder/embedded_identity_test.go b/internal/vendors/qoder/embedded_identity_test.go
+--- a/internal/vendors/qoder/embedded_identity_test.go
++++ b/internal/vendors/qoder/embedded_identity_test.go
+@@ -34,6 +34,9 @@
+ // TestEmbeddedMachineIdentity 验证内置组件在本机真的能产出身份。
+ func TestEmbeddedMachineIdentity(t *testing.T) {
++	if os.Getenv("FREETIER2API_SKIP_EMBEDDED_IDENTITY_EXECUTION") == "1" {
++		t.Skip("host machine identity is unavailable in the Nix sandbox")
++	}
+ 	if testing.Short() {
+ 		t.Skip("短模式跳过进程调用")
+ 	}

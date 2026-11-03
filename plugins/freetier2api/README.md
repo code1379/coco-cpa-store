@@ -10,6 +10,7 @@ The upstream source is fetched at build time rather than copied into this reposi
 
 - `0001-cline-cloud-model-catalog.patch`: include the Cline Cloud model category in the model catalogue.
 - `0002-default-disable-cline-nonfree-models.patch`: default-disable subscription, Cline Cloud, and unknown Cline models while preserving the explicit model-management enable override. An explicit `disabled_models` configuration remains authoritative.
+- `0003-nix-sandbox-skip-host-machine-identity-test.patch`: skips only the Qoder embedded runtime's host-identity execution test inside the isolated Nix test phase. It does not alter the embedded executable or production identity generation. The asset extraction test and the upstream CI's normal-host identity test remain intact.
 
 These patches are intentionally separate from upstream source. When upstream changes, CI verifies that both patches still apply and that the resulting Go tests pass. If upstream changes the affected code, update only the relevant patch and its tests.
 
