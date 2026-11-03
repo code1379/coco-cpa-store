@@ -1,13 +1,26 @@
 # FreeTier 2API (pinned upstream build)
 
-This package builds the upstream [CLIProxyAPI-freetier2api-plugin](https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin) at pinned commit `ddee2d93c74386256cd8b2ca6e6474dc01d81b34` using this repository's Nix build pipeline.
+This package builds the maintained upstream [CLIProxyAPI-freetier2api-plugin](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin) at release [v0.1.47](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin/releases/tag/v0.1.47), pinned to commit `f60ab60cb9cad0a0485bda8c4a8087b5859bc099`.
 
-The upstream project is MIT licensed. Its README restricts use to personal learning and technical research and prohibits commercial sale, API resale, paid hosting, automated reward farming, and public shared pools. Keep those limits in mind and follow each upstream provider's terms.
+The repository was originally created by jiandanc and has been maintained independently by cxy2730 since v0.1.29. The upstream project is MIT licensed. Its README restricts use to personal learning and technical research and prohibits commercial sale, API resale, paid hosting, automated reward farming, and public shared pools. Follow the upstream license and each provider's terms.
 
-The upstream source is fetched at build time rather than copied into this directory. Future customizations should be maintained as explicit patch files and applied by Nix, so upstream attribution and the pinned source remain clear.
+The upstream source is fetched at build time rather than copied into this repository. We keep only our customizations as reviewed patch files under `patches/`; Nix applies every `.patch` file in lexicographic order.
 
-## Local Cline model policy
+## Local patches
 
-The local patch set extends the pinned Cline model parser to include the `clineCloud` category. The model catalogue labels free models explicitly; subscription, Cline Cloud, and unknown Cline models are disabled by default. The existing model-management toggle can explicitly enable a non-free model, and that override is persisted across plugin restarts. An explicit `disabled_models` configuration remains authoritative.
+- `0001-cline-cloud-model-catalog.patch`: include the Cline Cloud model category in the model catalogue.
+- `0002-default-disable-cline-nonfree-models.patch`: default-disable subscription, Cline Cloud, and unknown Cline models while preserving the explicit model-management enable override. An explicit `disabled_models` configuration remains authoritative.
 
-The upstream adapter already includes bounded HTTP timeouts, structured upstream failure classification, a bundled model fallback, and a persistent model-catalog cache that preserves the last successful list when a refresh fails. The local changes build on those mechanisms rather than adding a second retry loop that might replay a partially streamed request.
+These patches are intentionally separate from upstream source. When upstream changes, CI verifies that both patches still apply and that the resulting Go tests pass. If upstream changes the affected code, update only the relevant patch and its tests.
+
+## Versioning and build
+
+`go/main.go` in this directory is Nix package metadata, not a copied implementation. Nix reads its `pluginVersion` value for the package and ZIP version, then injects the same value into the upstream Go build using:
+
+```bash
+go build -buildmode=c-shared -ldflags "-X main.pluginVersion=<version>"
+```
+
+This linker injection changes the version reported by the running plugin itself; it is not just a filename rename. CI checks the compiled Go build metadata for the injected version so the archive name and runtime-reported version cannot silently diverge.
+
+The source commit and Nix source hash are pinned in `nix/packages/plugins/default.nix`. The scheduled sync workflow updates those values from the latest upstream formal release and opens an upgrade PR; it does not auto-merge or deploy.
