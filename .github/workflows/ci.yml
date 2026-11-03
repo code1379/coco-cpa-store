@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: personal-ci-${{ github.workflow }}-${{ github.ref }}-${{ github.sha }}
+  group: personal-ci-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Validate formatting, metadata, tests, and plugin builds
-        run: nix flake check --print-build-logs
+        run: nix flake check --keep-going --print-build-logs
 
       - name: Build downloadable ZIP artifacts
         shell: bash

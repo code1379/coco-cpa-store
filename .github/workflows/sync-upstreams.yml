@@ -180,10 +180,10 @@ jobs:
           match = re.search(r'owner = "([^"]+)";\s*repo = "CLIProxyAPI-freetier2api-plugin";\s*rev = "([^"]+)"', text)
           if not match:
               raise SystemExit("Could not locate the pinned FreeTier2API source")
-          print(f"{match.group(1)}/{match.group(2)}")
+          print(f"{match.group(1)}/CLIProxyAPI-freetier2api-plugin/{match.group(2)}")
           PY
           )"
-          current_version="$(sed -n 's/^[[:space:]]*pluginVersion = "\([^"]*\)";/\1/p' plugins/freetier2api/go/main.go | head -n1)"
+          current_version="$(sed -n 's/^[[:space:]]*pluginVersion = "\([^"]*\)"[[:space:]]*$/\1/p' plugins/freetier2api/go/main.go | head -n1)"
 
           if [[ "$current_source" == "$repo/$revision" && "$current_version" == "$version" ]]; then
             echo "FreeTier2API is already at $tag ($revision)."
@@ -203,7 +203,7 @@ jobs:
           from pathlib import Path
 
           repo, revision, source_hash, version = sys.argv[1:]
-owner, repo_name = repo.split("/", 1)
+          owner = repo.split("/", 1)[0]
           path = Path("nix/packages/plugins/default.nix")
           text = path.read_text()
           pattern = r'(owner = ")[^"]+(";\s*repo = "CLIProxyAPI-freetier2api-plugin";\s*rev = ")[^"]+(";\s*hash = ")[^"]+(";)'
@@ -230,6 +230,7 @@ owner, repo_name = repo.split("/", 1)
           readme_path = Path("plugins/freetier2api/README.md")
           readme = readme_path.read_text()
           readme = re.sub(r'https://github.com/[^/]+/CLIProxyAPI-freetier2api-plugin', f'https://github.com/{repo}', readme)
+          readme = re.sub(r'\[v[0-9.]+\]\(https://github.com/[^)]+/releases/tag/v[0-9.]+\)', f'[v{version}](https://github.com/{repo}/releases/tag/v{version})', readme)
           readme = re.sub(r'commit `[0-9a-f]{40}`', f'commit `{revision}`', readme, count=1)
           readme_path.write_text(readme)
 
@@ -248,12 +249,16 @@ owner, repo_name = repo.split("/", 1)
           if heading not in changelog:
               entry = (
                   f"{heading}\n\n"
-                  f"- Upgrade the pinned source to upstream release [{version}](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin/releases/tag/v{version}).\n"
+                  f"- Upgrade the pinned source to upstream release [{version}](https://github.com/{repo}/releases/tag/v{version}).\n"
                   "- Preserve the local Cline Cloud classification and non-free-model default-deny patches.\n\n"
               )
               changelog = changelog.replace("# Changelog\n\n", "# Changelog\n\n" + entry, 1)
               changelog_path.write_text(changelog)
           PY
+
+          # Format generated edits and validate the whole tree before committing.
+          nix fmt
+          nix flake check --keep-going --print-build-logs
 
           git add nix/packages/plugins/default.nix plugins/freetier2api/go/main.go plugins/freetier2api/README.md plugins/freetier2api/plugin.json plugins/freetier2api/CHANGELOG.md README.md
           if ! git diff --cached --quiet; then
@@ -261,9 +266,6 @@ owner, repo_name = repo.split("/", 1)
           else
             echo "The pinned FreeTier2API source is already current; no commit is needed."
           fi
-
-          # This also runs Go tests and checks that both local patches still apply.
-          nix build .#plugins.freetier2api --print-build-logs
 
           git push origin "$branch"
 
@@ -278,7 +280,7 @@ owner, repo_name = repo.split("/", 1)
           - Non-free/unknown Cline model default-deny and explicit-enable patch.
 
           ## Validation
-          - nix build .#plugins.freetier2api --print-build-logs passed before pushing.
+          - nix fmt and nix flake check --keep-going --print-build-logs passed before pushing.
           - No automatic merge, release publishing, or server deployment.
           EOF
           )"

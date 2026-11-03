@@ -78,6 +78,12 @@ let
         else
           [ ];
       vendorHash = import (pluginsDir + "/${id}/vendor-hash.nix");
+      # Patch context offsets must not leave .orig files in the vendor tree:
+      # upstream's architecture tests reject files outside its source allowlist.
+      patchFlags = [
+        "-p1"
+        "--no-backup-if-mismatch"
+      ];
       postPatch = lib.optionalString (id == "freetier2api") ''
         # Upstream main.go initializes pluginVersion from app.DefaultVersion.
         # Replace the declaration itself so App.Version() reports our pinned package version.
@@ -87,27 +93,35 @@ let
 
       # Plugins are loaded through the CLIProxyAPI C ABI, so the artifact is a
       # cgo-produced shared library, not a regular binary.
+      # Also inherited by the vendoring derivation. Go may write toolchain
+      # configuration before tests run, so provide a writable home from build start.
+      preBuild = ''
+        export HOME="$TMPDIR/plugin-test-home"
+        export XDG_CONFIG_HOME="$HOME/.config"
+        export XDG_CACHE_HOME="$HOME/.cache"
+        mkdir -p "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME"
+      '';
       buildPhase = ''
-        runHook preBuild
-        if [[ "${id}" == "freetier2api" ]]; then
-          # Verify the actual version exposed by the App used by the C ABI.
-          cat > version_injection_check_test.go <<'GO_TEST'
-package main
+                runHook preBuild
+                if [[ "${id}" == "freetier2api" ]]; then
+                  # Verify the actual version exposed by the App used by the C ABI.
+                  cat > version_injection_check_test.go <<'GO_TEST'
+        package main
 
-import "testing"
+        import "testing"
 
-func TestPluginVersionMatchesPackage(t *testing.T) {
-    const expected = "${versionOf id}"
-    if got := pluginApp.Version(); got != expected {
-        t.Fatalf("plugin version = %q, want %q", got, expected)
-    }
-}
-GO_TEST
-          go test -run '^TestPluginVersionMatchesPackage$' .
-          rm version_injection_check_test.go
-        fi
-        go build -trimpath -buildmode=c-shared -o "${id}.so" .
-        runHook postBuild
+        func TestPluginVersionMatchesPackage(t *testing.T) {
+            const expected = "${versionOf id}"
+            if got := pluginApp.Version(); got != expected {
+                t.Fatalf("plugin version = %q, want %q", got, expected)
+            }
+        }
+        GO_TEST
+                  go test -run '^TestPluginVersionMatchesPackage$' .
+                  rm version_injection_check_test.go
+                fi
+                go build -trimpath -buildmode=c-shared -o "${id}.so" .
+                runHook postBuild
       '';
 
       doCheck = true;
@@ -115,13 +129,6 @@ GO_TEST
       nativeCheckInputs = [ pkgs.nodejs_24 ];
       checkPhase = ''
         runHook preCheck
-        # Nix builds commonly set HOME to /homeless-shelter, which is not writable.
-        # Some integration tests exercise plugin state persistence under the user's home.
-        export HOME="$TMPDIR/plugin-test-home"
-        mkdir -p "$HOME"
-        export XDG_CONFIG_HOME="$HOME/.config"
-        export XDG_CACHE_HOME="$HOME/.cache"
-        mkdir -p "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME"
         # Qoder runtime-info needs host machine identity unavailable in Nix sandbox.
         # The embedded asset extraction test and all other Go tests still run.
         export FREETIER2API_SKIP_EMBEDDED_IDENTITY_EXECUTION=1
