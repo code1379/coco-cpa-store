@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.47-store.2
+
+- Preserve the installed `freetier2api` management namespace when building upstream v0.1.47, fixing the console and management API returning 404 after restart.
+- Keep the `freetier` credential provider and existing state directory unchanged.
+- Add a regression test for the installed console URL, its API prefix, and management route registration.
+
 ## 0.1.47
 
 - Upgrade the pinned source to maintained upstream release [0.1.47](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin/releases/tag/v0.1.47), commit `f60ab60cb9cad0a0485bda8c4a8087b5859bc099`.
