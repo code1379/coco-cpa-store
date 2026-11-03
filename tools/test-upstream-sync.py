@@ -33,25 +33,39 @@ class UpgradeScriptTests(unittest.TestCase):
         ).groups()
         version = re.search(
             r'pluginVersion\s*=\s*"([^"]+)"', (ROOT / FILES[1]).read_text()
-        ).group(1)
+        ).group(1).split("-store.", 1)[0]
         # This includes the real early-exit condition. Falling through would
         # invoke prefetch/build in production and deliberately fails this test.
         start = SCRIPT.index('current_source="$(')
         end = SCRIPT.index('hash="$(nix store prefetch-file', start)
-        result = subprocess.run(
-            ["bash", "-eu"],
-            input=(
-                f"repo={owner}/{repo}\nrevision={revision}\n"
-                f"version={version}\ntag=v{version}\n"
-                + SCRIPT[start:end]
-                + "exit 99\n"
-            ),
-            cwd=ROOT,
-            text=True,
-            capture_output=True,
-        )
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn(f"already at v{version}", result.stdout)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in FILES[:2]:
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(ROOT / name, target)
+            for installed in (version, version + "-store.1", version + "-store.2"):
+                with self.subTest(installed=installed):
+                    main = root / FILES[1]
+                    main.write_text(re.sub(
+                        r'(pluginVersion\s*=\s*")[^"]+(")',
+                        lambda match: match.group(1) + installed + match.group(2),
+                        main.read_text(),
+                    ))
+                    result = subprocess.run(
+                        ["bash", "-eu"],
+                        input=(
+                            f"repo={owner}/{repo}\nrevision={revision}\n"
+                            f"version={version}\ntag=v{version}\n"
+                            + SCRIPT[start:end]
+                            + "exit 99\n"
+                        ),
+                        cwd=root,
+                        text=True,
+                        capture_output=True,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    self.assertIn(f"already at v{version}", result.stdout)
 
     def test_upgrade_updates_metadata_and_is_idempotent(self):
         marker = 'python3 - "$repo" "$revision" "$hash" "$version" <<\'PY\'\n'
