@@ -137,7 +137,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          repo="jiandanc/CLIProxyAPI-freetier2api-plugin"
+          repo="cxy2730/CLIProxyAPI-freetier2api-plugin"
           release_json="$(curl -fsSL -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/$repo/releases/latest")"
           tag="$(jq -r '.tag_name' <<<"$release_json")"
           version="${tag#v}"
@@ -161,7 +161,7 @@ jobs:
           }
 
           # Keep using the existing upgrade PR branch so its review history is preserved.
-          branch="upgrade/freetier2api-e90609d"
+          branch="upgrade/freetier2api-v0.1.47"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -173,29 +173,21 @@ jobs:
             git checkout -B "$branch" origin/main
           fi
 
-          current_revision="$(python3 - <<'PY'
+          current_source="$(python3 - <<'PY'
           import re
           from pathlib import Path
           text = Path("nix/packages/plugins/default.nix").read_text()
-          match = re.search(r'repo = "CLIProxyAPI-freetier2api-plugin";\s*rev = "([^"]+)"', text)
+          match = re.search(r'owner = "([^"]+)";\s*repo = "CLIProxyAPI-freetier2api-plugin";\s*rev = "([^"]+)"', text)
           if not match:
-              raise SystemExit("Could not locate the pinned FreeTier2API revision")
-          print(match.group(1))
+              raise SystemExit("Could not locate the pinned FreeTier2API source")
+          print(f"{match.group(1)}/CLIProxyAPI-freetier2api-plugin/{match.group(2)}")
           PY
           )"
-          current_version="$(sed -n 's/^[[:space:]]*pluginVersion = "\([^"]*\)";/\1/p' plugins/freetier2api/go/main.go | head -n1)"
+          current_version="$(sed -n 's/^[[:space:]]*pluginVersion = "\([^"]*\)"[[:space:]]*$/\1/p' plugins/freetier2api/go/main.go | head -n1)"
 
-          if [[ "$current_revision" == "$revision" && "$current_version" == "$version" ]]; then
+          if [[ "$current_source" == "$repo/$revision" && "$current_version" == "$version" ]]; then
             echo "FreeTier2API is already at $tag ($revision)."
             exit 0
-          fi
-
-          # Verify the prefetch method against the previously reviewed fixed hash.
-          known_hash="$(nix store prefetch-file --json --unpack --hash-type sha256 \
-            "https://github.com/$repo/archive/e90609d0138c0cfd7f1e00c0f8c827f8e5c22d11.tar.gz" | jq -r '.hash')"
-          if [[ "$known_hash" != "sha256-1sjaNXdr0Vop3Tty/gdCvmY2MLtOz97sJ1OuljmS4c4=" ]]; then
-            echo "Nix prefetch hash verification failed: $known_hash" >&2
-            exit 1
           fi
 
           hash="$(nix store prefetch-file --json --unpack --hash-type sha256 \
@@ -205,16 +197,21 @@ jobs:
             exit 1
           }
 
-          python3 - "$revision" "$hash" "$version" <<'PY'
+          python3 - "$repo" "$revision" "$hash" "$version" <<'PY'
           import re
           import sys
           from pathlib import Path
 
-          revision, source_hash, version = sys.argv[1:]
+          repo, revision, source_hash, version = sys.argv[1:]
+          owner = repo.split("/", 1)[0]
           path = Path("nix/packages/plugins/default.nix")
           text = path.read_text()
-          pattern = r'(repo = "CLIProxyAPI-freetier2api-plugin";\s*rev = ")[^"]+(";\s*hash = ")[^"]+(";)'
-          updated, count = re.subn(pattern, lambda m: m.group(1) + revision + m.group(2) + source_hash + m.group(3), text)
+          pattern = r'(owner = ")[^"]+(";\s*repo = "CLIProxyAPI-freetier2api-plugin";\s*rev = ")[^"]+(";\s*hash = ")[^"]+(";)'
+          updated, count = re.subn(
+              pattern,
+              lambda m: m.group(1) + owner + m.group(2) + revision + m.group(3) + source_hash + m.group(4),
+              text,
+          )
           if count != 1:
               raise SystemExit("Could not update exactly one pinned source block")
           path.write_text(updated)
@@ -232,31 +229,43 @@ jobs:
 
           readme_path = Path("plugins/freetier2api/README.md")
           readme = readme_path.read_text()
+          readme = re.sub(r'https://github.com/[^/]+/CLIProxyAPI-freetier2api-plugin', f'https://github.com/{repo}', readme)
+          readme = re.sub(r'\[v[0-9.]+\]\(https://github.com/[^)]+/releases/tag/v[0-9.]+\)', f'[v{version}](https://github.com/{repo}/releases/tag/v{version})', readme)
           readme = re.sub(r'commit `[0-9a-f]{40}`', f'commit `{revision}`', readme, count=1)
           readme_path.write_text(readme)
 
+          metadata_path = Path("plugins/freetier2api/plugin.json")
+          metadata = metadata_path.read_text()
+          metadata = re.sub(r'https://github.com/[^/]+/CLIProxyAPI-freetier2api-plugin', f'https://github.com/{repo}', metadata)
+          metadata_path.write_text(metadata)
+
+          root_readme_path = Path("README.md")
+          root_readme = root_readme_path.read_text()
+          root_readme = re.sub(r'https://github.com/[^/]+/CLIProxyAPI-freetier2api-plugin', f'https://github.com/{repo}', root_readme)
+          root_readme_path.write_text(root_readme)
           changelog_path = Path("plugins/freetier2api/CHANGELOG.md")
           changelog = changelog_path.read_text()
           heading = f"## {version}"
           if heading not in changelog:
               entry = (
                   f"{heading}\n\n"
-                  f"- Upgrade the pinned source to upstream release [{version}](https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin/releases/tag/v{version}).\n"
+                  f"- Upgrade the pinned source to upstream release [{version}](https://github.com/{repo}/releases/tag/v{version}).\n"
                   "- Preserve the local Cline Cloud classification and non-free-model default-deny patches.\n\n"
               )
               changelog = changelog.replace("# Changelog\n\n", "# Changelog\n\n" + entry, 1)
               changelog_path.write_text(changelog)
           PY
 
-          git add nix/packages/plugins/default.nix plugins/freetier2api/go/main.go plugins/freetier2api/README.md plugins/freetier2api/CHANGELOG.md
+          # Format generated edits and validate the whole tree before committing.
+          nix fmt
+          nix flake check --keep-going --print-build-logs
+
+          git add nix/packages/plugins/default.nix plugins/freetier2api/go/main.go plugins/freetier2api/README.md plugins/freetier2api/plugin.json plugins/freetier2api/CHANGELOG.md README.md
           if ! git diff --cached --quiet; then
             git commit -m "chore(freetier2api): upgrade pinned source to $tag"
           else
             echo "The pinned FreeTier2API source is already current; no commit is needed."
           fi
-
-          # This also runs Go tests and checks that both local patches still apply.
-          nix build .#plugins.freetier2api --print-build-logs
 
           git push origin "$branch"
 
@@ -271,7 +280,7 @@ jobs:
           - Non-free/unknown Cline model default-deny and explicit-enable patch.
 
           ## Validation
-          - nix build .#plugins.freetier2api --print-build-logs passed before pushing.
+          - nix fmt and nix flake check --keep-going --print-build-logs passed before pushing.
           - No automatic merge, release publishing, or server deployment.
           EOF
           )"

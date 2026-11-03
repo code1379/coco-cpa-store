@@ -8,5 +8,9 @@ pkgs.buildGoModule {
     path = flake + "/tools/registry-check";
   };
   vendorHash = "sha256-+Supej8yvKIOnVYODlNebyYigWjhfVMDRozynRfABts=";
+  preBuild = ''
+    export HOME="$TMPDIR/registry-check-home"
+    mkdir -p "$HOME"
+  '';
   meta.mainProgram = "registry-check";
 }

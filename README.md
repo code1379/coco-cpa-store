@@ -20,7 +20,7 @@
 
 - `cline-provider` — 计划中的 Cline Provider，动态发现模型，默认启用免费模型、默认禁用订阅/付费模型，并在服务端执行启停限制。
 - `cli-playground` — 将已有 Playground 整理成独立的 CLIProxyAPI 原生插件。
-- `freetier2api` — 基于 [jiandanc/CLIProxyAPI-freetier2api-plugin](https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin) 上游源码构建，保留本仓库的 Cline Cloud 模型分类和非免费模型默认禁用补丁。
+- `freetier2api` — 基于 [cxy2730/CLIProxyAPI-freetier2api-plugin](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin) 上游源码构建，保留本仓库的 Cline Cloud 模型分类和非免费模型默认禁用补丁。
 
 ## 目录约定
 
@@ -63,9 +63,20 @@ GitHub Actions 产物可以在对应 workflow run 的 Artifacts 区域下载。�
 ## 上游来源与许可
 
 - 上游仓库：[whexy/whexy-cpa-store](https://github.com/whexy/whexy-cpa-store)
-- FreeTier2API 上游源码：[jiandanc/CLIProxyAPI-freetier2api-plugin](https://github.com/jiandanc/CLIProxyAPI-freetier2api-plugin)，通过 Nix 固定 Commit 和源码哈希构建；本地补丁独立维护在 `plugins/freetier2api/patches/`。
+- FreeTier2API 上游源码：[cxy2730/CLIProxyAPI-freetier2api-plugin](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin)，通过 Nix 固定 Commit 和源码哈希构建；本地补丁独立维护在 `plugins/freetier2api/patches/`。
 - 上游各插件的 `plugin.json` 声明了 MIT，但上游根目录当前未找到统一的 `LICENSE` 文件。公开分发前应核实各插件源码和依赖的实际授权，并保留原作者版权声明。
 - Cline Provider 的实现可参考 [chengyixu/cpa-plugin-cline](https://github.com/chengyixu/cpa-plugin-cline)，该仓库包含自己的 MIT LICENSE；借鉴或复制代码时仍需保留对应许可声明。
+
+## FreeTier2API 维护方式
+
+FreeTier2API 不在本仓库复制或长期分叉上游源码，采用「上游固定版本 + 本地补丁」：
+
+1. 从 [cxy2730/CLIProxyAPI-freetier2api-plugin](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin) 获取正式 Release，并固定对应 commit 与 Nix 源码哈希。
+2. 本仓库只保留自己的差异补丁，放在 `plugins/freetier2api/patches/`，按文件名顺序应用；包括 Cline Cloud 模型分类、非免费/未知模型默认禁用策略，以及仅供 Nix 隔离测试环境使用的 Qoder 机器身份测试跳过补丁（不改变运行时行为）。
+3. Nix 从上游源码构建，先应用本地补丁，再在 `postPatch` 阶段把上游 `main.go` 的默认版本声明替换为固定包版本，并通过 Go 测试验证 `pluginApp.Version()`。ZIP 文件名、包版本和插件向 CPA 报告的版本必须一致。
+4. CI 执行补丁应用、Go 测试、动态库构建和版本元数据检查。上游升级只更新版本、commit 与源码哈希，不把上游代码复制进本仓库。
+
+上游同步工作流每天检查正式 Release 并创建/更新升级 PR；不会自动合并或部署服务器。
 
 ## 安全说明
 
@@ -73,9 +84,9 @@ GitHub Actions 产物可以在对应 workflow run 的 Artifacts 区域下载。�
 - Cline 免费模型的 `x-client-type: cline-cli` 是客户端标识，不是认证凭证；当前可用性是基于实测，服务端策略可能变化。
 - 本仓库仅构建测试，不自动发布任何插件，也不修改 1Panel 服务器。
 
-
 ## 上游同步
+
 - `whexy/whexy-cpa-store`：每天检查上游插件商店更新，合并到同步分支并创建 PR；本地 Nix 构建定义和自有插件不会被上游覆盖。
-- `jiandanc/CLIProxyAPI-freetier2api-plugin`：每天检查最新正式 Release，更新固定源码 Commit 与 Nix SHA-256，保留本地 Cline 补丁；构建通过后更新升级 PR。
+- `cxy2730/CLIProxyAPI-freetier2api-plugin`：每天检查最新正式 Release，更新固定源码 Commit 与 Nix SHA-256，保留本地 Cline 补丁；构建通过后更新升级 PR。
 - 两条同步通道均只创建/更新 PR，不自动合并、不创建公开 Release，也不部署到服务器。
 - 可在 GitHub Actions 中手动运行 **Sync upstream repositories**。
