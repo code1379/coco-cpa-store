@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.49-store.1
+
+- Upgrade the pinned source to upstream release [0.1.49](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin/releases/tag/v0.1.49).
+- Preserve the local Cline Cloud classification and non-free-model default-deny patches.
+- Fix ZCode offer detection when billing offers are already held; keep marketing lookup failures visible.
+
 ## 0.1.47-store.2
 
 - Preserve the installed `freetier2api` management namespace when building upstream v0.1.47, fixing the console and management API returning 404 after restart.
