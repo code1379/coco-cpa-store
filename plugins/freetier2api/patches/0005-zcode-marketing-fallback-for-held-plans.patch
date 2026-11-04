@@ -1,0 +1,149 @@
+--- a/internal/vendors/zcode/tasks.go
++++ b/internal/vendors/zcode/tasks.go
+@@ -570,13 +570,28 @@
+ // claimable 返回尚未领取的投放套餐。
+ func (s planSnapshot) claimable() []core.PlanInfo {
+ 	out := make([]core.PlanInfo, 0, len(s.offered))
+ 	for _, plan := range s.offered {
+ 		if !s.held[plan.PlanID] {
+ 			out = append(out, plan)
+ 		}
+ 	}
+ 	return out
+ }
++
++// hasClaimableOffer 报告投放列表里是否至少有一个尚未持有的套餐。
++func hasClaimableOffer(offered []core.PlanInfo, held map[string]bool) bool {
++	for _, plan := range offered {
++		if !held[plan.PlanID] {
++			return true
++		}
++	}
++	return false
++}
++
++// needsMarketingFallback 在计费通道没有可领取套餐时查询营销通道。
++func needsMarketingFallback(offered []core.PlanInfo, held map[string]bool, previewErr error) bool {
++	return previewErr != nil || !hasClaimableOffer(offered, held)
++}
+ 
+ // fetchPlanSnapshot 拉取套餐视图。
+ //
+@@ -616,24 +631,24 @@
+ 	// 投放有两条通道：billing/preview（计费通道）与 marketing/touch（营销通道）。
+ 	// 国内版实测活动只出现在营销通道，只看计费通道会把「有活动可领」误判成
+ 	// 「已领取全部套餐」——按钮因此一直是灰的。
+ 	//
+-	// 只有计费通道拿不到投放时才查营销通道：正常情况下额度刷新仍是 balance +
+-	// preview 两次请求，不给营销端点增加无关流量。
++	// 计费通道没有可领取套餐时才查营销通道：包括返回的套餐都已持有的情况。
++	// 正常情况下已有可领套餐时仍只发 balance + preview，不增加营销端点流量。
+ 	offered, errPreview := previewOfferedPlans(ctx, cred)
+ 	var marketing []core.PlanInfo
+ 	var errMarketing error
+-	if errPreview != nil || len(offered) == 0 {
++	if needsMarketingFallback(offered, snapshot.held, errPreview) {
+ 		marketing, errMarketing = queryMarketingTouch(ctx, cred)
+ 		if errMarketing != nil {
+ 			// 429 是软限流：营销通道只是兜底，降级后页面照样能用，记 Debug
+ 			// 别把 info 日志刷满（实测每轮都撞）。其它错误才是真故障。
+ 			if core.IsRetryableFailure(errMarketing) {
+ 				logger.Debug("zcode 营销触达受限，已降级：%v", errMarketing)
+ 			} else {
+ 				logger.Error("zcode 营销触达失败：%v", errMarketing)
+ 			}
+ 		}
+ 	}
+-	snapshot.offered, snapshot.errPreview = resolveOffers(offered, errPreview, marketing, errMarketing)
++	snapshot.offered, snapshot.errPreview = resolveClaimableOffers(offered, errPreview, marketing, errMarketing, snapshot.held)
+ 	return snapshot
+ }
+@@ -646,16 +661,31 @@
+ func resolveOffers(offered []core.PlanInfo, errPreview error, marketing []core.PlanInfo, errMarketing error) ([]core.PlanInfo, error) {
+ 	merged := mergeOfferedPlans(offered, marketing)
+ 	if len(merged) > 0 {
+ 		return merged, nil
+ 	}
+ 	if errPreview != nil {
+ 		return nil, errPreview
+ 	}
+ 	if errMarketing != nil {
+ 		return nil, errMarketing
+ 	}
+ 	return nil, nil
+ }
++
++// resolveClaimableOffers 不把「已有投放但全部已持有」误当成查询成功。
++// 如果为了寻找尚未持有的营销活动而触发了兜底查询，且兜底失败，就必须保留错误。
++func resolveClaimableOffers(offered []core.PlanInfo, errPreview error, marketing []core.PlanInfo, errMarketing error, held map[string]bool) ([]core.PlanInfo, error) {
++	merged, err := resolveOffers(offered, errPreview, marketing, errMarketing)
++	if !hasClaimableOffer(merged, held) {
++		if errPreview != nil {
++			return merged, errPreview
++		}
++		if errMarketing != nil {
++			return merged, errMarketing
++		}
++	}
++	return merged, err
++}
+ 
+ // previewOfferedPlans 查计费通道投放的套餐，把业务码折成错误。
+ func previewOfferedPlans(ctx context.Context, cred *Credential) ([]core.PlanInfo, error) {
+--- a/internal/vendors/zcode/tasks_test.go
++++ b/internal/vendors/zcode/tasks_test.go
+@@ -152,3 +152,26 @@
+ }
+ 
++func TestNeedsMarketingFallback(t *testing.T) {
++	previewErr := core.NewPluginError("zcode_preview_http", "preview 429", 502)
++	tests := []struct {
++		name       string
++		offered    []core.PlanInfo
++		held       map[string]bool
++		previewErr error
++		want       bool
++	}{
++		{name: "empty billing preview", want: true},
++		{name: "all billing offers already held", offered: []core.PlanInfo{{PlanID: "daily"}}, held: map[string]bool{"daily": true}, want: true},
++		{name: "billing has a claimable offer", offered: []core.PlanInfo{{PlanID: "daily"}, {PlanID: "weekly"}}, held: map[string]bool{"daily": true}, want: false},
++		{name: "billing preview failed", offered: []core.PlanInfo{{PlanID: "daily"}}, previewErr: previewErr, want: true},
++	}
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			if got := needsMarketingFallback(tt.offered, tt.held, tt.previewErr); got != tt.want {
++				t.Fatalf("needsMarketingFallback() = %v, want %v", got, tt.want)
++			}
++		})
++	}
++}
++
+ func TestMergeOfferedPlansCombinesBothChannels(t *testing.T) {
+@@ -260,2 +283,26 @@
+ }
+ 
++func TestResolveClaimableOffers(t *testing.T) {
++	held := map[string]bool{"daily": true}
++	marketingErr := core.NewPluginError("zcode_activity_http", "marketing 429", 429)
++
++	t.Run("held billing offer does not hide marketing error", func(t *testing.T) {
++		offers, err := resolveClaimableOffers([]core.PlanInfo{{PlanID: "daily"}}, nil, nil, marketingErr, held)
++		if len(offers) != 1 || err != marketingErr {
++			t.Fatalf("offers=%v err=%v, want held offer plus marketing error", offers, err)
++		}
++	})
++	t.Run("marketing offer supplements held billing offer", func(t *testing.T) {
++		offers, err := resolveClaimableOffers([]core.PlanInfo{{PlanID: "daily"}}, nil,
++			[]core.PlanInfo{{PlanID: "campaign"}}, nil, held)
++		if err != nil || !hasClaimableOffer(offers, held) {
++			t.Fatalf("offers=%v err=%v, want an unheld marketing offer", offers, err)
++		}
++	})
++	t.Run("claimable billing offer survives marketing error", func(t *testing.T) {
++		offers, err := resolveClaimableOffers([]core.PlanInfo{{PlanID: "weekly"}}, nil, nil, marketingErr, map[string]bool{})
++		if len(offers) != 1 || err != nil {
++			t.Fatalf("offers=%v err=%v, want the claimable billing offer", offers, err)
++		}
++	})
++}
+

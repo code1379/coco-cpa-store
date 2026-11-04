@@ -1,6 +1,6 @@
 # FreeTier 2API (pinned upstream build)
 
-This package builds the maintained upstream [CLIProxyAPI-freetier2api-plugin](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin) at release [v0.1.47](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin/releases/tag/v0.1.47), pinned to commit `f60ab60cb9cad0a0485bda8c4a8087b5859bc099`.
+This package builds the maintained upstream [CLIProxyAPI-freetier2api-plugin](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin) at release [v0.1.49](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin/releases/tag/v0.1.49), pinned to commit `5cee22202bca2f199c1a31ffa2881f06915237a8`.
 
 The repository was originally created by jiandanc and has been maintained independently by cxy2730 since v0.1.29. The upstream project is MIT licensed. Its README restricts use to personal learning and technical research and prohibits commercial sale, API resale, paid hosting, automated reward farming, and public shared pools. Follow the upstream license and each provider's terms.
 
@@ -12,6 +12,7 @@ The upstream source is fetched at build time rather than copied into this reposi
 - `0002-default-disable-cline-nonfree-models.patch`: default-disable subscription, Cline Cloud, and unknown Cline models while preserving the explicit model-management enable override. An explicit `disabled_models` configuration remains authoritative.
 - `0003-nix-sandbox-skip-host-machine-identity-test.patch`: skips only the Qoder embedded runtime's host-identity execution test inside the isolated Nix test phase. It does not alter the embedded executable or production identity generation. The asset extraction test and the upstream CI's normal-host identity test remain intact.
 - `0004-preserve-store-management-namespace.patch`: keep management routes and the console under the installed `freetier2api` ID. The `freetier` credential provider and state directory stay compatible with existing accounts.
+- `0005-zcode-marketing-fallback-for-held-plans.patch`: query the marketing channel when every billing offer is already held, and keep fallback query failures visible instead of falsely reporting that all plans were claimed.
 
 These patches are intentionally separate from upstream source. When upstream changes, CI verifies that all patches still apply and that the resulting Go tests pass. If upstream changes the affected code, update only the relevant patch and its tests.
 
