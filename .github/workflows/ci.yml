@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   validate-and-build:
+    if: github.ref_name != 'automation/bootstrap-sync'
     name: Validate and build plugin packages
     runs-on: ubuntu-latest
     timeout-minutes: 90
