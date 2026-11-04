@@ -426,12 +426,6 @@ jobs:
           bullet = '- `0005-zcode-marketing-fallback-for-held-plans.patch`: query marketing when billing offers contain no unheld plan; preserve the fallback error when no claimable offer can be confirmed.'
           if bullet not in text: patch_readme.write_text(text.rstrip() + '\n' + bullet + '\n')
 
-          changelog = Path('plugins/freetier2api/CHANGELOG.md')
-          text = changelog.read_text()
-          heading = '## 0.1.48-store.1'
-          note = '- Fix ZCode offer detection when billing offers are already held; keep marketing lookup failures visible.'
-          if heading not in text: raise SystemExit('Missing generated 0.1.48-store.1 changelog entry')
-          if note not in text: changelog.write_text(text.replace(heading, heading + '\n\n' + note, 1))
           PY
 
           # Format generated edits and validate the whole tree before committing.
