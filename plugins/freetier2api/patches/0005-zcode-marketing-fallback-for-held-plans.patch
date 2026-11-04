@@ -1,7 +1,6 @@
 --- a/internal/vendors/zcode/tasks.go
 +++ b/internal/vendors/zcode/tasks.go
-@@ -578,4 +578,19 @@
- 	return out
+@@ -579,3 +579,18 @@
  }
  
 +// hasClaimableOffer 报告投放列表里是否至少有一个尚未持有的套餐。
@@ -18,39 +17,19 @@
 +func needsMarketingFallback(offered []core.PlanInfo, held map[string]bool, previewErr error) bool {
 +	return previewErr != nil || !hasClaimableOffer(offered, held)
 +}
- 
++
  // fetchPlanSnapshot 拉取套餐视图。
-@@ -616,24 +631,24 @@
- 	// 投放有两条通道：billing/preview（计费通道）与 marketing/touch（营销通道）。
- 	// 国内版实测活动只出现在营销通道，只看计费通道会把「有活动可领」误判成
- 	// 「已领取全部套餐」——按钮因此一直是灰的。
- 	//
--	// 只有计费通道拿不到投放时才查营销通道：正常情况下额度刷新仍是 balance +
--	// preview 两次请求，不给营销端点增加无关流量。
-+	// 计费通道没有可领取套餐时才查营销通道：包括返回的套餐都已持有的情况。
-+	// 正常情况下已有可领套餐时仍只发 balance + preview，不增加营销端点流量。
- 	offered, errPreview := previewOfferedPlans(ctx, cred)
+@@ -623,3 +638,3 @@
  	var marketing []core.PlanInfo
  	var errMarketing error
 -	if errPreview != nil || len(offered) == 0 {
 +	if needsMarketingFallback(offered, snapshot.held, errPreview) {
- 		marketing, errMarketing = queryMarketingTouch(ctx, cred)
- 		if errMarketing != nil {
- 			// 429 是软限流：营销通道只是兜底，降级后页面照样能用，记 Debug
- 			// 别把 info 日志刷满（实测每轮都撞）。其它错误才是真故障。
- 			if core.IsRetryableFailure(errMarketing) {
- 				logger.Debug("zcode 营销触达受限，已降级：%v", errMarketing)
- 			} else {
- 				logger.Error("zcode 营销触达失败：%v", errMarketing)
- 			}
- 		}
- 	}
+@@ -637,3 +652,3 @@
 -	snapshot.offered, snapshot.errPreview = resolveOffers(offered, errPreview, marketing, errMarketing)
 +	snapshot.offered, snapshot.errPreview = resolveClaimableOffers(offered, errPreview, marketing, errMarketing, snapshot.held)
  	return snapshot
  }
-@@ -657,4 +672,19 @@
- 	return nil, nil
+@@ -658,3 +673,18 @@
  }
  
 +// resolveClaimableOffers 不把「已有投放但全部已持有」误当成查询成功。
@@ -67,7 +46,7 @@
 +	}
 +	return merged, err
 +}
- 
++
  // previewOfferedPlans 查计费通道投放的套餐，把业务码折成错误。
 --- a/internal/vendors/zcode/tasks_test.go
 +++ b/internal/vendors/zcode/tasks_test.go
