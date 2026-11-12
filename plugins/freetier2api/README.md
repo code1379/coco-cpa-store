@@ -1,6 +1,6 @@
 # FreeTier 2API (pinned upstream build)
 
-This package builds the maintained upstream [CLIProxyAPI-freetier2api-plugin](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin) at release [v0.1.55](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin/releases/tag/v0.1.55), pinned to commit `bd75f4e8f1e7c06d24420a7b3cf6a9f50a81a520`.
+This package builds the maintained upstream [CLIProxyAPI-freetier2api-plugin](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin) at release [v0.1.59](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin/releases/tag/v0.1.59), pinned to commit `b52f27d0f9de6d314548aa74df75dcbf1b761d18`.
 
 The repository was originally created by jiandanc and has been maintained independently by cxy2730 since v0.1.29. The upstream project is MIT licensed. Its README restricts use to personal learning and technical research and prohibits commercial sale, API resale, paid hosting, automated reward farming, and public shared pools. Follow the upstream license and each provider's terms.
 
