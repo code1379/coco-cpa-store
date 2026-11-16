@@ -1,7 +1,9 @@
 diff --git a/internal/vendors/qoder/embedded_identity_test.go b/internal/vendors/qoder/embedded_identity_test.go
+index 00e04c6..ddd8f42 100644
 --- a/internal/vendors/qoder/embedded_identity_test.go
 +++ b/internal/vendors/qoder/embedded_identity_test.go
-@@ -34,6 +34,9 @@
+@@ -38,6 +38,9 @@ func TestExtractEmbeddedRuntimeInfo(t *testing.T) {
+ 
  // TestEmbeddedMachineIdentity 验证内置组件在本机真的能产出身份。
  func TestEmbeddedMachineIdentity(t *testing.T) {
 +	if os.Getenv("FREETIER2API_SKIP_EMBEDDED_IDENTITY_EXECUTION") == "1" {
