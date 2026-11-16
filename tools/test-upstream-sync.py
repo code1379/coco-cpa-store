@@ -15,7 +15,9 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = yaml.safe_load((ROOT / ".github/workflows/sync-upstreams.yml").read_text())
 SCRIPT = WORKFLOW["jobs"]["sync-freetier2api"]["steps"][-1]["run"]
 FILES = [
-    "nix/packages/plugins/default.nix",
+    ("plugins/freetier2api/upstream.nix"
+     if (ROOT / "plugins/freetier2api/upstream.nix").exists()
+     else "nix/packages/plugins/default.nix"),
     "plugins/freetier2api/go/main.go",
     "plugins/freetier2api/README.md",
     "plugins/freetier2api/plugin.json",
@@ -66,6 +68,38 @@ class UpgradeScriptTests(unittest.TestCase):
                     )
                     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                     self.assertIn(f"already at v{version}", result.stdout)
+
+    def test_plugin_pin_takes_precedence_over_legacy_build_pin(self):
+        marker = 'python3 - "$repo" "$revision" "$hash" "$version" <<\'PY\'\n'
+        source = SCRIPT.split(marker, 1)[1].split("\nPY", 1)[0]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in FILES:
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(ROOT / name, target)
+            legacy = root / "nix/packages/plugins/default.nix"
+            legacy.parent.mkdir(parents=True, exist_ok=True)
+            legacy.write_text("legacy build must remain unchanged\n")
+            pin = root / "plugins/freetier2api/upstream.nix"
+            pin.write_text((ROOT / FILES[0]).read_text())
+            subprocess.run(
+                [sys.executable, "-", "cxy2730/CLIProxyAPI-freetier2api-plugin",
+                 "b" * 40, "sha256-plugin-pin", "99.0.1"],
+                input=source, cwd=root, text=True, check=True,
+            )
+            self.assertIn('rev = "' + "b" * 40 + '"', pin.read_text())
+            self.assertEqual(legacy.read_text(), "legacy build must remain unchanged\n")
+            start = SCRIPT.index('current_source="$(')
+            end = SCRIPT.index('hash="$(nix store prefetch-file', start)
+            result = subprocess.run(
+                ["bash", "-eu"],
+                input=("repo=cxy2730/CLIProxyAPI-freetier2api-plugin\n"
+                       + "revision=" + "b" * 40 + "\nversion=99.0.1\ntag=v99.0.1\n"
+                       + SCRIPT[start:end] + "exit 99\n"),
+                cwd=root, text=True, capture_output=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_upgrade_updates_metadata_and_is_idempotent(self):
         marker = 'python3 - "$repo" "$revision" "$hash" "$version" <<\'PY\'\n'
