@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.59-store.1
+
+- Upgrade the pinned source to upstream release [0.1.59](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin/releases/tag/v0.1.59), commit `b52f27d0f9de6d314548aa74df75dcbf1b761d18`.
+- Include upstream alias collision checks, per-account quota timeouts, credential caching, minute-level scheduling, and Trae, WorkBuddy, Qoder, and Raccoon fixes.
+- Rebase all five local patches; preserve Cline Cloud classification, default-deny behavior with explicit enables, the Nix identity-test guard, and ZCode marketing fallback.
+- Apply the installed management namespace to the new console page fragments, preserving existing credential and state compatibility.
+- Keep the source commit and hash in `upstream.nix` so future plugin upgrades stay within this directory.
+
 ## 0.1.49-store.1
 
 - Upgrade the pinned source to upstream release [0.1.49](https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin/releases/tag/v0.1.49).

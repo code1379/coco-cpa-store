@@ -1,6 +1,40 @@
+diff --git a/internal/admin/console_test.go b/internal/admin/console_test.go
+index 842efdc..24ccf2b 100644
+--- a/internal/admin/console_test.go
++++ b/internal/admin/console_test.go
+@@ -558,10 +558,10 @@ func TestConsoleModelChangesTriggerHostReload(t *testing.T) {
+ 	page := Page("/plugins/freetier")
+ 
+ 	for _, literal := range []string{
+-		"syncModelConfig",                      // 同步入口
+-		"config_reloaded_at",                   // 制造配置内容变化的键
+-		`hostPath("/plugins/freetier/config")`, // 宿主插件配置路由
+-		`api("PATCH", configPath`,              // 浅合并写配置，触发宿主重载
++		"syncModelConfig",            // 同步入口
++		"config_reloaded_at",         // 制造配置内容变化的键
++		`hostPath(BASE + "/config")`, // 宿主插件配置路由
++		`api("PATCH", configPath`,    // 浅合并写配置，触发宿主重载
+ 	} {
+ 		if !strings.Contains(page, literal) {
+ 			t.Fatalf("console page missing model-sync wiring (%s)", literal)
+diff --git a/internal/admin/page/50-models.html b/internal/admin/page/50-models.html
+index 32231fa..e92ec55 100644
+--- a/internal/admin/page/50-models.html
++++ b/internal/admin/page/50-models.html
+@@ -320,7 +320,7 @@
+     modelSyncTimer = null;
+     if (modelSyncRunning) { modelSyncPending = true; return; }
+     modelSyncRunning = true;
+-    var configPath = hostPath("/plugins/freetier/config");
++    var configPath = hostPath(BASE + "/config");
+     api("GET", configPath).then(function (config) {
+       // GET 返回的可能是空对象（该插件段尚未落过自定义配置），补成对象再合并。
+       var body = (config && typeof config === "object") ? config : {};
+diff --git a/internal/app/main.go b/internal/app/main.go
+index 19411b7..2414724 100644
 --- a/internal/app/main.go
 +++ b/internal/app/main.go
-@@ -17,7 +17,7 @@
+@@ -17,7 +17,7 @@ import (
  )
  
  const (
@@ -9,6 +43,9 @@
  	pluginDisplayName = "FreeTier 2API"
  	pluginAuthor      = "cxy2730"
  	pluginRepository  = "https://github.com/cxy2730/CLIProxyAPI-freetier2api-plugin"
+diff --git a/internal/app/store_namespace_test.go b/internal/app/store_namespace_test.go
+new file mode 100644
+index 0000000..be581ad
 --- /dev/null
 +++ b/internal/app/store_namespace_test.go
 @@ -0,0 +1,58 @@
@@ -70,28 +107,8 @@
 +		t.Fatalf("existing credential provider changed: %q", providerKey)
 +	}
 +}
---- a/internal/admin/console.html
-+++ b/internal/admin/console.html
-@@ -2064,7 +2064,7 @@
-     modelSyncTimer = null;
-     if (modelSyncRunning) { modelSyncPending = true; return; }
-     modelSyncRunning = true;
--    var configPath = hostPath("/plugins/freetier/config");
-+    var configPath = hostPath(BASE + "/config");
-     api("GET", configPath).then(function (config) {
-       // GET 返回的可能是空对象（该插件段尚未落过自定义配置），补成对象再合并。
-       var body = (config && typeof config === "object") ? config : {};
---- a/internal/admin/console_test.go
-+++ b/internal/admin/console_test.go
-@@ -558,7 +558,7 @@
- 	for _, literal := range []string{
- 		"syncModelConfig",                      // 同步入口
- 		"config_reloaded_at",                   // 制造配置内容变化的键
--		`hostPath("/plugins/freetier/config")`, // 宿主插件配置路由
-+		`hostPath(BASE + "/config")`, // 宿主插件配置路由
- 		`api("PATCH", configPath`,              // 浅合并写配置，触发宿主重载
- 	} {
- 		if !strings.Contains(page, literal) {
+diff --git a/registry.json b/registry.json
+index 1fe35e5..60cef65 100644
 --- a/registry.json
 +++ b/registry.json
 @@ -2,7 +2,7 @@
@@ -103,9 +120,11 @@
        "name": "FreeTier 2API",
        "description": "把多个免费额度供应商（WorkBuddy 国内版/国际版、Qoder 国内版/国际版、OpenCode ZEN、Cline、ZCode 国内版/国际版、Trae 国内版/国际版、CodeArts、MiniMax Code 国内版/国际版、AutoClaw 国内版/国际版、小浣熊）接入 CLIProxyAPI：auth / model / executor / quota / management 五类能力，按供应商插桩，支持凭证归属隔离、模型清单动态探测、额度查询与每日签到。",
        "author": "cxy2730",
+diff --git a/tests/integration/activity_probe_test.go b/tests/integration/activity_probe_test.go
+index 6fd2b76..a5cb36f 100644
 --- a/tests/integration/activity_probe_test.go
 +++ b/tests/integration/activity_probe_test.go
-@@ -86,7 +86,7 @@
+@@ -86,7 +86,7 @@ func TestZCodeActivityPreviewIsReadOnlyAndDegradesWithoutUserID(t *testing.T) {
  func previewActivities(t *testing.T, accountID string) activitiesPreviewResponse {
  	t.Helper()
  	raw, err := testApp.HandleMethod(pluginabi.MethodManagementHandle, mustMarshal(pluginapi.ManagementRequest{
@@ -114,9 +133,11 @@
  		Headers: http.Header{"X-Host-Callback-Id": []string{testCallbackID}}, Body: []byte(`{"account_id":"` + accountID + `"}`),
  	}))
  	if err != nil {
+diff --git a/tests/integration/management_resilience_test.go b/tests/integration/management_resilience_test.go
+index f79a9ee..4d12d48 100644
 --- a/tests/integration/management_resilience_test.go
 +++ b/tests/integration/management_resilience_test.go
-@@ -196,7 +196,7 @@
+@@ -196,7 +196,7 @@ func managementCallWithCancel(t *testing.T, method, path string) pluginapi.Manag
  	cancel()
  	raw, errHandle := testApp.HandleMethod(pluginabi.MethodManagementHandle, mustMarshal(pluginapi.ManagementRequest{
  		Method: method,
@@ -125,20 +146,11 @@
  		Headers: http.Header{
  			"X-Host-Callback-Id": []string{testCallbackID},
  		},
---- a/tests/integration/testutil_test.go
-+++ b/tests/integration/testutil_test.go
-@@ -222,7 +222,7 @@
- 	t.Helper()
- 	request := pluginapi.ManagementRequest{
- 		Method:  method,
--		Path:    "/v0/management/plugins/freetier" + path,
-+		Path:    "/v0/management/plugins/freetier2api" + path,
- 		Headers: http.Header{"X-Host-Callback-Id": []string{testCallbackID}},
- 	}
- 	if body != nil {
+diff --git a/tests/integration/registry_test.go b/tests/integration/registry_test.go
+index fb08b03..cc546db 100644
 --- a/tests/integration/registry_test.go
 +++ b/tests/integration/registry_test.go
-@@ -90,7 +90,7 @@
+@@ -90,7 +90,7 @@ func TestRegistryManifestIsValid(t *testing.T) {
  //
  // 宿主按 {id}{ext} 找动态库；ID 与文件名不一致会让插件静默不被加载。
  func TestPluginIDMatchesLibraryName(t *testing.T) {
@@ -147,3 +159,16 @@
  		t.Fatalf("app.PluginID = %q; changing it requires renaming the build output and registry", app.PluginID)
  	}
  	if app.ProviderKey != core.ProviderKey {
+diff --git a/tests/integration/testutil_test.go b/tests/integration/testutil_test.go
+index db7035c..0926ae5 100644
+--- a/tests/integration/testutil_test.go
++++ b/tests/integration/testutil_test.go
+@@ -222,7 +222,7 @@ func managementCallWithBody(t *testing.T, method, path string, body any) plugina
+ 	t.Helper()
+ 	request := pluginapi.ManagementRequest{
+ 		Method:  method,
+-		Path:    "/v0/management/plugins/freetier" + path,
++		Path:    "/v0/management/plugins/freetier2api" + path,
+ 		Headers: http.Header{"X-Host-Callback-Id": []string{testCallbackID}},
+ 	}
+ 	if body != nil {
