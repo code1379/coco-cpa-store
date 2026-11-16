@@ -176,7 +176,10 @@ jobs:
           current_source="$(python3 - <<'PY'
           import re
           from pathlib import Path
-          text = Path("nix/packages/plugins/default.nix").read_text()
+          pin_path = Path("plugins/freetier2api/upstream.nix")
+          if not pin_path.exists():
+              pin_path = Path("nix/packages/plugins/default.nix")
+          text = pin_path.read_text()
           match = re.search(r'owner = "([^"]+)";\s*repo = "CLIProxyAPI-freetier2api-plugin";\s*rev = "([^"]+)"', text)
           if not match:
               raise SystemExit("Could not locate the pinned FreeTier2API source")
@@ -205,7 +208,9 @@ jobs:
 
           repo, revision, source_hash, version = sys.argv[1:]
           owner = repo.split("/", 1)[0]
-          path = Path("nix/packages/plugins/default.nix")
+          path = Path("plugins/freetier2api/upstream.nix")
+          if not path.exists():
+              path = Path("nix/packages/plugins/default.nix")
           text = path.read_text()
           pattern = r'(owner = ")[^"]+(";\s*repo = "CLIProxyAPI-freetier2api-plugin";\s*rev = ")[^"]+(";\s*hash = ")[^"]+(";)'
           updated, count = re.subn(
@@ -261,6 +266,9 @@ jobs:
           nix fmt
           nix flake check --keep-going --print-build-logs
 
+          if [[ -f plugins/freetier2api/upstream.nix ]]; then
+            git add plugins/freetier2api/upstream.nix
+          fi
           git add nix/packages/plugins/default.nix plugins/freetier2api/go/main.go plugins/freetier2api/README.md plugins/freetier2api/plugin.json plugins/freetier2api/CHANGELOG.md README.md
           if ! git diff --cached --quiet; then
             git commit -m "chore(freetier2api): upgrade pinned source to $tag"

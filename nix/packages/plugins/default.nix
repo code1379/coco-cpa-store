@@ -52,12 +52,20 @@ let
       # otherwise land on buildGoModule's GOPATH and make Go ignore go.mod.
       src =
         if id == "freetier2api" then
-          pkgs.fetchFromGitHub {
-            owner = "cxy2730";
-            repo = "CLIProxyAPI-freetier2api-plugin";
-            rev = "5cee22202bca2f199c1a31ffa2881f06915237a8";
-            hash = "sha256-3+By2w1Hmhqqza3Jmh1uEaQWuJfQevMXq61ZfbMZHwI=";
-          }
+          pkgs.fetchFromGitHub (
+            let
+              pinFile = pluginsDir + "/freetier2api/upstream.nix";
+            in
+            if builtins.pathExists pinFile then
+              import pinFile
+            else
+              {
+                owner = "cxy2730";
+                repo = "CLIProxyAPI-freetier2api-plugin";
+                rev = "5cee22202bca2f199c1a31ffa2881f06915237a8";
+                hash = "sha256-3+By2w1Hmhqqza3Jmh1uEaQWuJfQevMXq61ZfbMZHwI=";
+              }
+          )
         else
           builtins.path {
             name = id;
