@@ -101,16 +101,16 @@
         "executor",
         "quota"
       ],
-      "version": "0.9.0",
+      "version": "0.10.0",
       "install": {
         "type": "direct",
         "artifacts": [
           {
             "goos": "linux",
             "goarch": "amd64",
-            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/opencode-go-v0.9.0/opencode-go-v0.9.0-linux-amd64.zip",
-            "sha256": "74a27f08eae400d7d23671e66f96a867f3c002b6405c6f9de815c961823276ca",
-            "size": 11251377
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/opencode-go-v0.10.0/opencode-go-v0.10.0-linux-amd64.zip",
+            "sha256": "8499206c5dde5e6b3efce9b4e4255fdace394c69a5686464723810cafb290853",
+            "size": 11513853
           }
         ]
       }
@@ -131,16 +131,16 @@
         "codex",
         "claude"
       ],
-      "version": "0.1.1",
+      "version": "0.2.0",
       "install": {
         "type": "direct",
         "artifacts": [
           {
             "goos": "linux",
             "goarch": "amd64",
-            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/reset-first-v0.1.1/reset-first-v0.1.1-linux-amd64.zip",
-            "sha256": "a63c1abb44e657ceff49f5ee13e0bf18c013497fc55c8b3809def97f3e9f04d0",
-            "size": 3742782
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/reset-first-v0.2.0/reset-first-v0.2.0-linux-amd64.zip",
+            "sha256": "7446a356d6904f304c44acf98817e8be363c8ebb5a51832216880db4bc8be5a7",
+            "size": 4021495
           }
         ]
       }
@@ -158,16 +158,16 @@
         "prompt",
         "interceptor"
       ],
-      "version": "0.1.0",
+      "version": "0.2.0",
       "install": {
         "type": "direct",
         "artifacts": [
           {
             "goos": "linux",
             "goarch": "amd64",
-            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/system-prompt-v0.1.0/system-prompt-v0.1.0-linux-amd64.zip",
-            "sha256": "7a4aad33e10a66296eaadac3ce68575093c479129c412cdd24ac70589a77c5d5",
-            "size": 3769850
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/system-prompt-v0.2.0/system-prompt-v0.2.0-linux-amd64.zip",
+            "sha256": "5e1fd4f6535f9fed2969537fcf7700735258e83785614cf52b867f27574257b6",
+            "size": 4068646
           }
         ]
       }
