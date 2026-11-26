@@ -16,16 +16,16 @@
         "interceptor",
         "management"
       ],
-      "version": "0.2.0",
+      "version": "0.3.0",
       "install": {
         "type": "direct",
         "artifacts": [
           {
             "goos": "linux",
             "goarch": "amd64",
-            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/client-keys-v0.2.0/client-keys-v0.2.0-linux-amd64.zip",
-            "sha256": "bc56b7f7419b31c481a67d3f62f1262e7aa20faf9d0f2f568c1106a00b49407c",
-            "size": 7148344
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/client-keys-v0.3.0/client-keys-v0.3.0-linux-amd64.zip",
+            "sha256": "0fe2a968a1e00cc8f6189a4133a6506630959ec50bcfd7b35daf65aac3fc8a4d",
+            "size": 7406190
           }
         ]
       }
@@ -44,16 +44,16 @@
         "catalog",
         "registry"
       ],
-      "version": "0.1.0",
+      "version": "0.2.0",
       "install": {
         "type": "direct",
         "artifacts": [
           {
             "goos": "linux",
             "goarch": "amd64",
-            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/extra-models-v0.1.0/extra-models-v0.1.0-linux-amd64.zip",
-            "sha256": "aed5d27f28d09f7f96547b874c70c9f4725524fc839ad901911590dc9216fc9d",
-            "size": 3624167
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/extra-models-v0.2.0/extra-models-v0.2.0-linux-amd64.zip",
+            "sha256": "b50a1206e22d575ae3b1bd78694c9dda896c246279e78a054a65ab43dd7ec373",
+            "size": 3921656
           }
         ]
       }
