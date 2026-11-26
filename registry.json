@@ -187,16 +187,16 @@
         "cost",
         "dashboard"
       ],
-      "version": "0.7.0",
+      "version": "0.8.0",
       "install": {
         "type": "direct",
         "artifacts": [
           {
             "goos": "linux",
             "goarch": "amd64",
-            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/usage-dashboard-v0.7.0/usage-dashboard-v0.7.0-linux-amd64.zip",
-            "sha256": "d17e1224430eab6da9f6de9fcf615f69c076881e4da618fb2cf5e6f89c2163e1",
-            "size": 4062601
+            "url": "https://github.com/whexy/whexy-cpa-store/releases/download/usage-dashboard-v0.8.0/usage-dashboard-v0.8.0-linux-amd64.zip",
+            "sha256": "9a51a2bf58502182a4a64eb68592308774df8760022a00b6d4882b38990bf353",
+            "size": 4325971
           }
         ]
       }
