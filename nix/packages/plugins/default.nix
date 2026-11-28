@@ -55,8 +55,8 @@ let
           pkgs.fetchFromGitHub {
             owner = "cxy2730";
             repo = "CLIProxyAPI-freetier2api-plugin";
-            rev = "d2f2bc2c4e7ca01067312caf86c7c631de75d70b";
-            hash = "sha256-/haeIyHzY1yFNA0vbKx+/kDI2MF5WNsIiB2Fb2c8G/o=";
+            rev = "0a718a6d463507a7fef886ee22ce61ee5a973f4f";
+            hash = "sha256-VOeDypYRAl0LsFWDJG/sdmFYrV3RaADkXweblOdYRAQ=";
           }
         else
           builtins.path {
