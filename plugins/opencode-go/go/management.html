@@ -6,397 +6,131 @@
     <meta name="referrer" content="no-referrer" />
     <title>OpenCode Go</title>
     <style>
-      :root {
-        --bg-page: #faf9f5;
-        --bg-card: #f0eee8;
-        --bg-subtle: #e9e6df;
-        --bg-input: #faf9f5;
-        --text-primary: #2d2a26;
-        --text-secondary: #6d6760;
-        --text-tertiary: #a29c95;
-        --text-quaternary: #c0bab3;
-        --border: #e3e1db;
-        --border-hover: #cecac4;
-        --primary: #8b8680;
-        --primary-hover: #7f7a74;
-        --primary-contrast: #ffffff;
-        --error: #c65746;
-        --error-text: #b04a3b;
-        --ok-text: #065f46;
-        --ok-badge-bg: #d1fae5;
-        --ok-badge-border: #6ee7b7;
-        --bad-badge-bg: rgba(198, 87, 70, 0.14);
-        --bad-badge-text: #8a3a30;
-        --bad-badge-border: rgba(198, 87, 70, 0.35);
-        --warn-badge-bg: color-mix(in srgb, #d97706 10%, transparent);
-        --warn-badge-text: #92400e;
-        --warn-badge-border: color-mix(in srgb, #d97706 30%, transparent);
-        --meter-high: #10b981;
-        --meter-medium: #e0aa14;
-        --meter-low: #c65746;
-        --shadow: 0 1px 2px 0 rgb(0 0 0 / 0.08);
-        --font-sans:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-          "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-          sans-serif;
-        --font-mono:
-          ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono",
-          "Fira Code", Menlo, Consolas, "Liberation Mono", monospace;
-        color-scheme: light;
-      }
-
-      [data-theme="white"] {
-        --bg-page: #ffffff;
-        --bg-card: #ffffff;
-        --bg-subtle: #f6f6f6;
-        --bg-input: #ffffff;
-        --border: #e5e5e5;
-        --border-hover: #cccccc;
-      }
-
-      [data-theme="dark"] {
-        --bg-page: #151412;
-        --bg-card: #1d1b18;
-        --bg-subtle: #262320;
-        --bg-input: #151412;
-        --text-primary: #f6f4f1;
-        --text-secondary: #c9c3bb;
-        --text-tertiary: #9c958d;
-        --text-quaternary: #6f6962;
-        --border: #3a3530;
-        --border-hover: #5a544d;
-        --primary-hover: #9a948e;
-        --error-text: #f1b0a6;
-        --ok-text: #6ee7b7;
-        --ok-badge-bg: rgba(6, 78, 59, 0.3);
-        --ok-badge-border: #059669;
-        --bad-badge-bg: rgba(198, 87, 70, 0.24);
-        --bad-badge-text: #f1b0a6;
-        --bad-badge-border: rgba(198, 87, 70, 0.5);
-        --warn-badge-bg: color-mix(in srgb, #f59e0b 14%, transparent);
-        --warn-badge-text: #fcd34d;
-        --warn-badge-border: color-mix(in srgb, #f59e0b 38%, transparent);
-        --meter-high: #0fae78;
-        --meter-medium: #ffd862;
-        --meter-low: #cf4b3a;
-        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3);
-        color-scheme: dark;
-      }
-
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-      }
-
-      html,
-      body {
-        margin: 0;
-        background: var(--bg-page);
-        color: var(--text-primary);
-        font-family: var(--font-sans);
-        font-size: 14px;
-        line-height: 1.45;
-      }
-
-      [hidden] {
-        display: none !important;
-      }
-
       /* Tabs differ in height, so the page keeps the scrollbar's room even
          when one needs none, and switching tabs does not shift it. */
       html {
         scrollbar-gutter: stable;
       }
 
-      /* Management Center floats its toolbar (and, when narrow, its menu
-         button) over the top 76px of the frame. */
-      main {
-        max-width: 980px;
-        margin: 0 auto;
-        padding: 84px clamp(16px, 3vw, 32px) 48px;
-      }
-
-      a {
-        color: inherit;
-        text-underline-offset: 2px;
-      }
-
-      code {
-        font-family: var(--font-mono);
-        font-size: 12.5px;
-      }
-
-      h1 {
-        margin: 0;
-        font-size: 20px;
-        font-weight: 700;
-      }
-
-      .bar {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 16px;
-      }
-
-      .bar-actions {
-        display: flex;
-        gap: 8px;
-        margin-left: auto;
-      }
-
-      /* The baseline is an inset shadow rather than a border, so the
-         selected tab's underline covers it without overflowing the strip,
-         which scrolls when the frame is narrow. */
+      /* Tabs are nav links in a row; the current one is the active link. */
       .tabs {
         display: flex;
-        gap: 4px;
-        margin-bottom: 20px;
+        gap: calc(var(--spacing) * 6);
+        padding-inline: var(--gutter);
         overflow-x: auto;
         scrollbar-width: none;
-        box-shadow: inset 0 -1px 0 var(--border);
+        & .nav-link {
+          padding: calc(var(--spacing) * 2) 0;
+          border: 0;
+          background: none;
+          white-space: nowrap;
+          cursor: pointer;
+        }
       }
 
-      .tab {
-        border: 0;
-        border-bottom: 2px solid transparent;
-        padding: 8px 12px;
-        background: transparent;
-        color: var(--text-secondary);
-        font: inherit;
-        font-weight: 600;
-        white-space: nowrap;
-        cursor: pointer;
-        transition:
-          border-color 150ms ease,
-          color 150ms ease;
-      }
-
-      .tab:hover {
-        color: var(--text-primary);
-      }
-
-      .tab[aria-selected="true"] {
-        border-bottom-color: var(--text-primary);
-        color: var(--text-primary);
-      }
-
-      .tab:focus-visible {
-        outline: 2px solid var(--primary);
-        outline-offset: -2px;
-        border-radius: 6px 6px 0 0;
-      }
-
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        border: 1px solid transparent;
-        border-radius: 8px;
-        padding: 8px 12px;
-        background: var(--bg-subtle);
-        color: var(--text-primary);
-        font: inherit;
-        font-size: 13px;
-        font-weight: 600;
-        white-space: nowrap;
-        cursor: pointer;
-        transition:
-          background-color 150ms ease,
-          border-color 150ms ease,
-          color 150ms ease;
-      }
-
-      .btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
-
-      .btn-sm {
-        padding: 5px 9px;
-      }
-
-      .btn-primary {
-        background: var(--primary);
-        border-color: var(--primary);
-        color: var(--primary-contrast);
-      }
-
-      .btn-primary:not(:disabled):hover {
-        background: var(--primary-hover);
-        border-color: var(--primary-hover);
-      }
-
-      .btn-ghost {
-        background: transparent;
-        color: var(--text-secondary);
-      }
-
-      .btn-ghost:not(:disabled):hover {
-        background: var(--bg-subtle);
-        color: var(--text-primary);
-      }
-
-      .btn-danger {
-        color: var(--error-text);
-      }
-
-      .btn-danger-solid {
-        background: var(--error);
-        border-color: var(--error);
-        color: #ffffff;
-      }
-
-      [data-theme="dark"] .btn-ghost:not(.btn-danger) {
-        color: var(--text-primary);
-      }
-
-      .btn:focus-visible,
-      a:focus-visible {
-        outline: 2px solid var(--primary);
-        outline-offset: 2px;
-      }
-
-      .input {
-        width: 100%;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 8px 10px;
-        background: var(--bg-input);
-        color: var(--text-primary);
-        font: inherit;
-        transition:
-          border-color 150ms ease,
-          box-shadow 150ms ease;
-      }
-
-      .input::placeholder {
-        color: var(--text-tertiary);
-      }
-
-      .input:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(139, 134, 128, 0.18);
-      }
-
-      .input-mono {
-        font-family: var(--font-mono);
-        font-size: 13px;
-      }
-
-      .card {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        box-shadow: var(--shadow);
-        padding: 16px 18px;
-      }
-
-      .field {
+      #content,
+      #models,
+      [role="tabpanel"] {
         display: flex;
         flex-direction: column;
-        gap: 4px;
-        min-width: 0;
-        color: var(--text-secondary);
-        font-size: 13px;
-        font-weight: 600;
+        gap: calc(var(--spacing) * 6);
       }
 
-      .hint {
-        margin: 0;
-        color: var(--text-tertiary);
-        font-size: 13px;
-      }
-
-      .error {
-        margin: 0;
-        color: var(--error-text);
-        font-size: 13px;
-        overflow-wrap: anywhere;
+      #content[hidden],
+      #models[hidden],
+      [role="tabpanel"][hidden] {
+        display: none;
       }
 
       .ok-text {
-        color: var(--ok-text);
+        color: var(--color-ok-ink);
       }
 
-      .auth {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        max-width: 420px;
+      h2 {
+        margin: 0;
+        font-size: var(--text-base);
       }
 
-      .auth .row {
-        display: flex;
-        gap: 8px;
+      h3 {
+        margin: 0;
+        font-family: var(--font-title);
+        font-size: var(--text-sm);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-ink-glass);
       }
 
       .add {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
-        gap: 12px;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
         align-items: end;
-        margin-bottom: 16px;
-      }
-
-      .add .row {
-        display: flex;
-        gap: 8px;
-      }
-
-      .add .error {
-        grid-column: 1 / -1;
-      }
-
-      .empty {
-        margin: 8px 0 16px;
-        color: var(--text-secondary);
-      }
-
-      .logins:not(:empty) {
-        margin-bottom: 12px;
+        & .row,
+        & .error {
+          grid-column: 1 / -1;
+        }
       }
 
       .keys {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: calc(var(--spacing) * 4);
         margin: 0;
         padding: 0;
         list-style: none;
       }
 
-      .key {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
+      .keys:empty {
+        display: none;
+      }
+
+      /* The tab panels put the page's blocks one level below .page, out of
+         reach of the kit's phone layout, so #content repeats it: surfaces go
+         square and edge to edge, and text outside them keeps the gutter. */
+      #content {
+        --gutter: calc(var(--spacing) * 2);
+      }
+
+      [role="tabpanel"] > p:not(.panel),
+      .workspace > p {
+        padding-inline: var(--gutter);
+      }
+
+      @media (width < 40rem) {
+        #content {
+          --gutter: calc(var(--spacing) * 4);
+          margin-inline: 0;
+        }
+
+        [role="tabpanel"] .glass-card {
+          border-radius: 0;
+        }
+
+        .stack {
+          margin-inline: var(--gutter);
+        }
       }
 
       .key-head {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 8px 10px;
-      }
-
-      .key-head .input {
-        flex: 1 1 220px;
-        width: auto;
+        gap: calc(var(--spacing) * 2) calc(var(--spacing) * 3);
+        & input {
+          flex: 1 1 14rem;
+          width: auto;
+        }
       }
 
       .name {
         min-width: 0;
-        font-size: 15px;
-        font-weight: 650;
+        font-family: var(--font-title);
+        font-size: var(--text-base);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-ink-glass);
         overflow-wrap: anywhere;
       }
 
-      .name-masked {
+      .name.mono {
         font-family: var(--font-mono);
-        font-size: 14px;
       }
 
       .is-disabled .name,
@@ -407,179 +141,123 @@
       .key-actions {
         display: flex;
         flex-wrap: wrap;
-        gap: 2px;
+        gap: calc(var(--spacing) * 0.5);
         margin-left: auto;
-      }
-
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        padding: 1px 8px;
-        color: var(--text-secondary);
-        font-size: 12px;
-        font-weight: 600;
-        white-space: nowrap;
-      }
-
-      .badge-ok {
-        background: var(--ok-badge-bg);
-        border-color: var(--ok-badge-border);
-        color: var(--ok-text);
-      }
-
-      .badge-bad {
-        background: var(--bad-badge-bg);
-        border-color: var(--bad-badge-border);
-        color: var(--bad-badge-text);
-      }
-
-      .badge-warn {
-        background: var(--warn-badge-bg);
-        border-color: var(--warn-badge-border);
-        color: var(--warn-badge-text);
       }
 
       .meta {
         display: flex;
         flex-wrap: wrap;
-        gap: 2px 14px;
-        color: var(--text-secondary);
-        font-size: 13px;
+        gap: calc(var(--spacing) * 0.5) calc(var(--spacing) * 4);
+        color: var(--color-ink-muted);
       }
 
-      .notice {
+      .key-note {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 8px;
-        font-size: 13px;
+        gap: calc(var(--spacing) * 2);
       }
 
-      .notice:empty,
+      .key-note:empty,
       .runtime-message:empty {
         display: none;
       }
 
+      .families {
+        display: flex;
+        flex-wrap: wrap;
+        gap: calc(var(--spacing) * 1) calc(var(--spacing) * 6);
+        color: var(--color-ink-soft);
+        & label {
+          display: inline-flex;
+          align-items: center;
+          gap: calc(var(--spacing) * 2);
+          cursor: pointer;
+        }
+      }
+
+      /* Quota meters: a fill track whose bar takes the status of what is
+         left. */
       .usage {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px 20px;
-      }
-
-      .usage > .error {
-        grid-column: 1 / -1;
+        gap: calc(var(--spacing) * 3) calc(var(--spacing) * 5);
+        & > .error {
+          grid-column: 1 / -1;
+        }
       }
 
       .meter-head {
         display: flex;
         align-items: baseline;
         justify-content: space-between;
-        gap: 8px;
-        font-size: 13px;
+        gap: calc(var(--spacing) * 2);
       }
 
       .meter-name {
-        font-weight: 600;
+        font-family: var(--font-title);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-ink-glass);
       }
 
       .meter-value {
-        font-weight: 650;
+        font-weight: var(--font-weight-medium);
         font-variant-numeric: tabular-nums;
       }
 
       .meter-value.is-bad {
-        color: var(--error-text);
+        color: var(--color-danger-ink);
       }
 
-      .track {
-        height: 6px;
-        margin: 6px 0 4px;
-        border-radius: 999px;
-        background: color-mix(in srgb, var(--text-primary) 8%, transparent);
-        overflow: hidden;
-      }
-
-      .fill {
-        width: 0;
-        height: 100%;
-        border-radius: 999px;
-        transition: width 360ms cubic-bezier(0.23, 1, 0.32, 1);
-      }
-
-      .fill-high {
-        background: var(--meter-high);
-      }
-
-      .fill-medium {
-        background: var(--meter-medium);
-      }
-
-      .fill-low {
-        background: var(--meter-low);
+      .meter .track {
+        margin: calc(var(--spacing) * 1.5) 0 calc(var(--spacing) * 1);
       }
 
       .reset {
-        color: var(--text-quaternary);
-        font-size: 12px;
+        color: var(--color-ink-faint);
+        font-size: var(--text-xs);
         font-variant-numeric: tabular-nums;
       }
 
       .reset-relative {
-        color: var(--text-tertiary);
+        color: var(--color-ink-muted);
+        &::before {
+          content: "·";
+          margin: 0 calc(var(--spacing) * 1);
+          color: var(--color-ink-faint);
+        }
       }
 
-      .reset-relative::before {
-        content: "·";
-        margin: 0 4px;
-        color: var(--text-quaternary);
-      }
-
-      h3 {
-        margin: 0;
-        font-size: 14px;
-        font-weight: 650;
-      }
-
-      /* One catalog's list on the Models tab: the OpenCode Zen, Go and Free
-         models. */
       .list {
-        margin-top: 20px;
-      }
-
-      #models[hidden] + .list {
-        margin-top: 0;
+        display: flex;
+        flex-direction: column;
+        gap: calc(var(--spacing) * 3);
       }
 
       .section-head {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 6px 12px;
-        margin-bottom: 12px;
-      }
-
-      .section-head > .btn,
-      .section-head > .section-actions {
-        margin-left: auto;
+        gap: calc(var(--spacing) * 1.5) calc(var(--spacing) * 3);
+        padding-inline: var(--gutter);
       }
 
       .section-actions {
         display: flex;
-        gap: 8px;
+        flex-wrap: wrap;
+        gap: calc(var(--spacing) * 2);
+        margin-left: auto;
       }
 
       .section-meta {
-        color: var(--text-tertiary);
-        font-size: 13px;
+        color: var(--color-ink-muted);
       }
 
       .stack {
         display: flex;
         flex-direction: column;
-        gap: 6px;
-        margin-bottom: 12px;
+        gap: calc(var(--spacing) * 2);
       }
 
       .stack:empty {
@@ -588,57 +266,35 @@
 
       .stack p {
         margin: 0;
-        font-size: 13px;
         overflow-wrap: anywhere;
       }
 
-      .warn-text {
-        color: var(--warn-badge-text);
+      .list > h3,
+      .list > .hint,
+      .list > .error,
+      .stack > .hint {
+        margin: 0;
+        padding-inline: var(--gutter);
       }
 
+      /* Wide tables scroll inside their paper rather than widen the
+         page. */
       .table-card {
-        padding: 0;
+        padding: calc(var(--spacing) * 2) calc(var(--spacing) * 3);
         overflow-x: auto;
       }
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-      }
-
-      th {
-        padding: 10px 14px;
-        border-bottom: 1px solid var(--border);
-        color: var(--text-secondary);
-        font-weight: 600;
-        text-align: left;
-        white-space: nowrap;
-      }
-
-      th[title] {
+      .table th[title] {
         cursor: help;
-        text-decoration: underline dotted var(--text-quaternary);
-        text-underline-offset: 3px;
+        text-decoration: underline dotted var(--color-ink-faint);
+        text-underline-offset: 0.2em;
       }
 
-      td {
-        padding: 8px 14px;
-        border-bottom: 1px solid var(--border);
-        vertical-align: middle;
-      }
-
-      tbody tr:last-child td {
-        border-bottom: none;
-      }
-
-      .num {
-        text-align: right;
-        font-variant-numeric: tabular-nums;
+      .table .num {
         white-space: nowrap;
       }
 
-      .toggle {
+      .table .toggle {
         width: 1%;
         text-align: center;
       }
@@ -647,17 +303,22 @@
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 4px 8px;
+        gap: calc(var(--spacing) * 1) calc(var(--spacing) * 2);
+      }
+
+      .model-head.nowrap {
+        flex-wrap: nowrap;
+        white-space: nowrap;
       }
 
       .model-name {
-        font-weight: 600;
+        font-weight: var(--font-weight-medium);
       }
 
       .model-id,
       .served {
-        color: var(--text-tertiary);
-        font-size: 12px;
+        color: var(--color-ink-muted);
+        font-size: var(--text-xs);
         overflow-wrap: anywhere;
       }
 
@@ -671,14 +332,14 @@
       }
 
       input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
+        width: calc(var(--spacing) * 4);
+        height: calc(var(--spacing) * 4);
         margin: 0;
-        accent-color: var(--primary);
         cursor: pointer;
       }
 
       input[type="checkbox"]:disabled {
+        opacity: 0.5;
         cursor: not-allowed;
       }
 
@@ -686,62 +347,48 @@
          a cross: a checkmark reads as "kept". */
       .cross input[type="checkbox"] {
         appearance: none;
-        border: 1px solid var(--primary);
-        border-radius: 4px;
-        background: var(--bg-input);
+        border: 1px solid var(--color-line-strong);
+        border-radius: var(--radius-md);
+        background-color: color-mix(
+          in oklab,
+          var(--color-white) 60%,
+          transparent
+        );
+        transition: background-color 150ms;
       }
 
       .cross input[type="checkbox"]:checked {
-        background-color: var(--primary);
+        border-color: var(--color-ink);
+        background-color: var(--color-ink);
         background-image:
           linear-gradient(
             45deg,
             transparent 45%,
-            var(--primary-contrast) 45%,
-            var(--primary-contrast) 55%,
+            var(--color-on-ink) 45%,
+            var(--color-on-ink) 55%,
             transparent 55%
           ),
           linear-gradient(
             -45deg,
             transparent 45%,
-            var(--primary-contrast) 45%,
-            var(--primary-contrast) 55%,
+            var(--color-on-ink) 45%,
+            var(--color-on-ink) 55%,
             transparent 55%
           );
       }
 
-      .families {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px 16px;
-        color: var(--text-secondary);
-        font-size: 13px;
-      }
-
-      .families label {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-      }
-
-      .routing {
-        display: grid;
-        gap: 12px;
-      }
-
       .routing-grid {
         display: grid;
-        grid-template-columns: max-content repeat(2, minmax(0, 160px));
-        gap: 8px 12px;
+        grid-template-columns: max-content repeat(2, minmax(0, 10rem));
+        gap: calc(var(--spacing) * 2) calc(var(--spacing) * 3);
         align-items: center;
         justify-content: start;
       }
 
       .routing-label {
-        color: var(--text-secondary);
-        font-size: 13px;
-        font-weight: 600;
+        color: var(--color-ink-soft);
+        font-family: var(--font-title);
+        font-weight: var(--font-weight-medium);
       }
 
       /* Workspace usage: one block per workspace, its range picker in the
@@ -749,236 +396,70 @@
       .workspace {
         display: flex;
         flex-direction: column;
-        gap: 12px;
-      }
-
-      .workspace + .workspace {
-        margin-top: 28px;
+        gap: calc(var(--spacing) * 4);
       }
 
       .workspace-body {
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        transition: opacity 150ms ease;
+        gap: calc(var(--spacing) * 4);
+        transition: opacity 200ms;
       }
 
       .workspace-body.is-loading {
         opacity: 0.6;
       }
 
-      .workspace h4 {
-        margin: 0;
-        font-size: 13px;
-        font-weight: 650;
-      }
-
-      .usage-part {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
       .usage-line {
         display: flex;
         flex-wrap: wrap;
         align-items: baseline;
-        gap: 4px 12px;
-      }
-
-      .usage-line > p {
-        margin: 0;
+        gap: calc(var(--spacing) * 1) calc(var(--spacing) * 3);
+        padding-inline: var(--gutter);
       }
 
       td.time {
-        color: var(--text-secondary);
-        font-variant-numeric: tabular-nums;
+        color: var(--color-ink-subtle);
         white-space: nowrap;
-      }
-
-      .workspace .section-head {
-        margin-bottom: 0;
-      }
-
-      .segmented {
-        display: inline-flex;
-        gap: 2px;
-        padding: 2px;
-        border-radius: 8px;
-        background: var(--bg-subtle);
-      }
-
-      .segmented button {
-        border: 0;
-        border-radius: 6px;
-        padding: 4px 10px;
-        background: transparent;
-        color: var(--text-secondary);
-        font: inherit;
-        font-size: 12.5px;
-        font-weight: 600;
-        white-space: nowrap;
-        cursor: pointer;
-      }
-
-      .segmented button[aria-pressed="true"] {
-        background: var(--bg-card);
-        color: var(--text-primary);
-        box-shadow: var(--shadow);
-      }
-
-      [data-theme="dark"] .segmented button[aria-pressed="true"] {
-        background: var(--border);
-      }
-
-      .segmented button:focus-visible {
-        outline: 2px solid var(--primary);
-        outline-offset: 1px;
-      }
-
-      .tiles {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
-      }
-
-      .tile {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        padding: 12px 16px;
-      }
-
-      .tile-label {
-        color: var(--text-secondary);
-        font-size: 13px;
-        font-weight: 600;
-      }
-
-      .tile-value {
-        font-size: 22px;
-        font-weight: 650;
-        overflow-wrap: anywhere;
-      }
-
-      .chart-card {
-        padding: 12px 16px 10px;
       }
 
       .chart-head {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        gap: 8px;
-        margin-bottom: 6px;
+        justify-content: space-between;
+        gap: calc(var(--spacing) * 3);
       }
 
-      .chart-head .segmented {
-        margin-left: auto;
+      /* Columns are one total per period, so they wear series-total; the
+         column under the pointer stays, the rest step back. */
+      .chart-plot .bar {
+        fill: var(--color-series-total);
+        transition: fill 150ms;
       }
 
-      /* The bar color is the reference palette's first categorical slot,
-         stepped per theme and checked against the card surfaces. */
-      .chart {
-        --chart-bar: #2a78d6;
-        --chart-bar-active: #5598e7;
-        position: relative;
-        min-height: 180px;
-        outline: none;
+      .chart-plot.is-pointing .bar:not(.is-active) {
+        fill: var(--color-series-muted);
       }
 
-      [data-theme="dark"] .chart {
-        --chart-bar: #3987e5;
-        --chart-bar-active: #6da7ec;
-      }
-
-      .chart:focus-visible {
-        outline: 2px solid var(--primary);
-        outline-offset: 2px;
-        border-radius: 4px;
-      }
-
-      .chart svg {
-        display: block;
-        overflow: visible;
-      }
-
-      .chart .bar {
-        fill: var(--chart-bar);
-      }
-
-      .chart .bar.is-active {
-        fill: var(--chart-bar-active);
-      }
-
-      .chart .grid {
-        stroke: var(--border);
+      .chart-plot .grid {
+        stroke: var(--color-rule);
         stroke-width: 1;
         shape-rendering: crispEdges;
       }
 
-      .chart text {
-        fill: var(--text-tertiary);
-        font-size: 11px;
-        font-variant-numeric: tabular-nums;
+      .chart-plot .baseline {
+        stroke: var(--color-axis);
+        stroke-width: 1;
+        shape-rendering: crispEdges;
       }
 
-      .chart text.peak {
-        fill: var(--text-secondary);
-        font-weight: 600;
+      .chart-plot text.peak {
+        fill: var(--color-ink-subtle);
+        font-weight: var(--font-weight-medium);
       }
 
-      .chart-empty {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 180px;
-        margin: 0;
-      }
-
-      .chart-tip {
-        position: absolute;
-        top: 0;
-        z-index: 1;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 6px 10px;
-        background: var(--bg-card);
-        box-shadow: var(--shadow);
-        color: var(--text-secondary);
-        font-size: 12px;
-        white-space: nowrap;
-        pointer-events: none;
-      }
-
-      .chart-tip strong {
-        display: block;
-        color: var(--text-primary);
-        font-size: 13px;
-        font-weight: 650;
-      }
-
-      .sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip-path: inset(50%);
-        white-space: nowrap;
-      }
-
-      @media (max-width: 640px) {
-        .tiles {
-          grid-template-columns: minmax(0, 1fr);
-        }
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .workspace-body {
-          transition: none;
-        }
-      }
-
-      @media (max-width: 640px) {
+      @media (width < 40rem) {
         .add,
         .usage {
           grid-template-columns: minmax(0, 1fr);
@@ -988,61 +469,40 @@
           grid-template-columns: max-content repeat(2, minmax(0, 1fr));
         }
 
-        .tab {
-          padding-inline: 8px;
-        }
-
         .key-actions {
           margin-left: 0;
-        }
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .fill,
-        .btn,
-        .tab,
-        .input {
-          transition: none;
         }
       }
     </style>
   </head>
   <body>
-    <main>
-      <div class="bar">
+    <main class="page">
+      <div class="head">
+        <img class="head-logo" src="logo.svg" alt="" />
         <h1>OpenCode Go</h1>
-        <div class="bar-actions" id="bar-actions" hidden>
-          <button class="btn btn-ghost" id="reload" type="button">
-            Reload
-          </button>
-        </div>
+        <span class="spacer"></span>
+        <button class="btn-ghost" id="reload" type="button" hidden>
+          Reload
+        </button>
       </div>
 
-      <form class="card auth" id="auth" hidden>
-        <label class="field">
-          Management key
-          <input
-            class="input"
-            id="auth-key"
-            type="password"
-            autocomplete="off"
-            spellcheck="false"
-            required
-          />
-        </label>
-        <p class="hint">Kept in this tab only.</p>
-        <p class="error" id="auth-error" hidden></p>
-        <div class="row">
-          <button class="btn btn-primary" id="auth-submit" type="submit">
-            Continue
-          </button>
-        </div>
+      <form class="auth" id="auth" hidden>
+        <label for="auth-key">Management key</label
+        ><input
+          id="auth-key"
+          type="password"
+          autocomplete="current-password"
+          spellcheck="false"
+          title="Kept in this tab only."
+          required
+        /><button class="btn-solid" type="submit">Continue</button>
+        <p class="error" id="auth-error" role="alert" hidden></p>
       </form>
 
       <div id="content" hidden>
         <div class="tabs" role="tablist" aria-label="OpenCode Go">
           <button
-            class="tab"
+            class="nav-link"
             id="tab-credentials"
             type="button"
             role="tab"
@@ -1051,7 +511,7 @@
             Logins &amp; keys
           </button>
           <button
-            class="tab"
+            class="nav-link"
             id="tab-usage"
             type="button"
             role="tab"
@@ -1060,7 +520,7 @@
             Usage
           </button>
           <button
-            class="tab"
+            class="nav-link"
             id="tab-models"
             type="button"
             role="tab"
@@ -1069,7 +529,7 @@
             Models
           </button>
           <button
-            class="tab"
+            class="nav-link"
             id="tab-routing"
             type="button"
             role="tab"
@@ -1088,12 +548,14 @@
         >
           <div class="section-head">
             <p class="hint" id="login-hint" hidden></p>
-            <button class="btn btn-primary" id="add-open" type="button">
-              Add key
-            </button>
+            <div class="section-actions">
+              <button class="btn-solid" id="add-open" type="button">
+                Add key
+              </button>
+            </div>
           </div>
 
-          <p class="empty" id="empty" hidden>
+          <p class="panel empty" id="empty" hidden>
             Nothing added yet. Log in from Management Center → OAuth Login →
             OpenCode Go, no key needed, or add a service-account key
             (<code>oc_sk_…</code>) from the workspace that holds the Go
@@ -1106,21 +568,20 @@
             >
           </p>
 
-          <form class="card add" id="add" hidden>
-            <label class="field">
-              Label
-              <input
-                class="input"
+          <form class="glass-card card add" id="add" hidden>
+            <div class="field">
+              <label for="add-label">Label</label
+              ><input
                 id="add-label"
                 maxlength="64"
                 placeholder="Optional"
                 autocomplete="off"
               />
-            </label>
-            <label class="field">
-              Key
-              <input
-                class="input input-mono"
+            </div>
+            <div class="field">
+              <label for="add-key">Key</label
+              ><input
+                class="mono"
                 id="add-key"
                 type="password"
                 placeholder="oc_sk_…"
@@ -1128,12 +589,12 @@
                 spellcheck="false"
                 required
               />
-            </label>
+            </div>
             <div class="row">
-              <button class="btn btn-primary" id="add-submit" type="submit">
+              <button class="btn-solid" id="add-submit" type="submit">
                 Add
               </button>
-              <button class="btn btn-ghost" id="add-cancel" type="button">
+              <button class="btn-ghost" id="add-cancel" type="button">
                 Cancel
               </button>
             </div>
@@ -1166,7 +627,7 @@
             <div class="section-head">
               <span class="section-meta" id="models-meta"></span>
               <div class="section-actions">
-                <button class="btn btn-ghost" id="models-refresh" type="button">
+                <button class="btn-ghost" id="models-refresh" type="button">
                   Refresh models
                 </button>
               </div>
@@ -1179,33 +640,22 @@
                 <h3>OpenCode Zen models</h3>
                 <span class="section-meta" id="zen-meta"></span>
                 <div class="section-actions">
-                  <button
-                    class="btn btn-ghost"
-                    id="zen-enable-all"
-                    type="button"
-                  >
+                  <button class="btn-ghost" id="zen-enable-all" type="button">
                     Enable all
                   </button>
-                  <button
-                    class="btn btn-ghost"
-                    id="zen-disable-all"
-                    type="button"
-                  >
+                  <button class="btn-ghost" id="zen-disable-all" type="button">
                     Disable all
                   </button>
                 </div>
               </div>
               <p class="hint">
-                Off by default. Enabling a model adds
+                Enabling a model adds
                 <span id="zen-id-note"><code>opencode/…</code></span> to
                 CLIProxyAPI for every login and key with OpenCode Zen on, and
                 sends its requests to OpenCode Zen, which bills Console credits.
-                Models priced at zero are free: the plugin presents those
-                requests as the OpenCode client, which is the only caller the
-                free tier answers.
               </p>
-              <div class="card table-card">
-                <table>
+              <div class="paper card table-card">
+                <table class="table">
                   <thead>
                     <tr>
                       <th>Model</th>
@@ -1230,7 +680,7 @@
                 <span class="section-meta" id="go-meta"></span>
                 <div class="section-actions">
                   <button
-                    class="btn btn-ghost"
+                    class="btn-ghost"
                     id="models-disable-all"
                     type="button"
                   >
@@ -1238,8 +688,8 @@
                   </button>
                 </div>
               </div>
-              <div class="card table-card">
-                <table>
+              <div class="paper card table-card">
+                <table class="table">
                   <thead>
                     <tr>
                       <th>Model</th>
@@ -1265,14 +715,14 @@
               <span class="section-meta" id="free-meta"></span>
               <div class="section-actions">
                 <button
-                  class="btn btn-ghost"
+                  class="btn-ghost"
                   id="free-refresh"
                   type="button"
                   hidden
                 >
                   Refresh models
                 </button>
-                <button class="btn btn-primary" id="free-toggle" type="button">
+                <button class="btn-solid" id="free-toggle" type="button">
                   Turn on
                 </button>
               </div>
@@ -1285,8 +735,8 @@
               CLIProxyAPI.
             </p>
             <div class="stack" id="free-notices"></div>
-            <div class="card table-card" id="free-table" hidden>
-              <table>
+            <div class="paper card table-card" id="free-table" hidden>
+              <table class="table">
                 <thead>
                   <tr>
                     <th>Model</th>
@@ -1313,7 +763,7 @@
           hidden
         >
           <p class="hint" id="routing-empty">Loading…</p>
-          <form class="card routing" id="routing-form" hidden>
+          <form class="glass-card card" id="routing-form" hidden>
             <p class="hint" id="routing-strategy"></p>
             <div class="routing-grid">
               <span></span>
@@ -1328,7 +778,7 @@
               </span>
               <span class="routing-label routing-go">OpenCode Go</span>
               <input
-                class="input routing-go"
+                class="routing-go"
                 id="routing-go-priority"
                 type="number"
                 step="1"
@@ -1336,7 +786,7 @@
                 aria-label="OpenCode Go priority"
               />
               <input
-                class="input routing-go"
+                class="routing-go"
                 id="routing-go-weight"
                 type="number"
                 step="1"
@@ -1347,7 +797,7 @@
               />
               <span class="routing-label routing-zen">OpenCode Zen</span>
               <input
-                class="input routing-zen"
+                class="routing-zen"
                 id="routing-zen-priority"
                 type="number"
                 step="1"
@@ -1355,7 +805,7 @@
                 aria-label="OpenCode Zen priority"
               />
               <input
-                class="input routing-zen"
+                class="routing-zen"
                 id="routing-zen-weight"
                 type="number"
                 step="1"
@@ -1368,7 +818,7 @@
                 >OpenCode Free</span
               >
               <input
-                class="input routing-free"
+                class="routing-free"
                 id="routing-free-priority"
                 type="number"
                 step="1"
@@ -1377,7 +827,7 @@
                 hidden
               />
               <input
-                class="input routing-free"
+                class="routing-free"
                 id="routing-free-weight"
                 type="number"
                 step="1"
@@ -1389,7 +839,7 @@
               />
             </div>
             <div class="row">
-              <button class="btn btn-primary" id="routing-save" type="submit">
+              <button class="btn-solid" id="routing-save" type="submit">
                 Save
               </button>
             </div>
@@ -1768,225 +1218,15 @@
     </script>
     <script>
       "use strict";
+      const { $, h, AuthError, api, cpa, auth, storage } = kit;
 
-      // The page is served at <base>/v0/resource/plugins/opencode-go/index.html,
-      // where <base> is empty unless a reverse proxy adds a path prefix.
-      const BASE = location.pathname.replace(
-        /\/v0\/resource\/plugins\/[^/]+\/[^/]*$/,
-        "",
-      );
-      const API = BASE + "/v0/management/opencode-go";
-      // CLIProxyAPI's own Management API, for config the plugin cannot reach.
-      const CPA = BASE + "/v8/management";
+      // CLIProxyAPI's own config, for what the plugin cannot reach.
       const ALIAS_MAP = "/config/oauth/model-alias";
       const EXCLUDED_MAP = "/config/oauth/excluded-models";
       const PLUGIN_CONFIG = "/config/plugins/configs/" + PROVIDER;
-      const SESSION_KEY = "opencode-go.management-key";
-      const REJECTED_KEY = "opencode-go.rejected-mc-auth";
-      const MC_AUTH_KEY = "cli-proxy-auth";
-      const MC_THEME_KEY = "cli-proxy-theme";
       const USAGE_CONCURRENCY = 3;
       const SOURCE_FILE = "opencode-go.json";
       const WINDOW_NAMES = ["5-hour", "Weekly", "Monthly"];
-
-      const $ = (id) => document.getElementById(id);
-
-      function storageGet(storage, key) {
-        try {
-          return storage.getItem(key);
-        } catch (_) {
-          return null;
-        }
-      }
-
-      function storageSet(storage, key, value) {
-        try {
-          storage.setItem(key, value);
-        } catch (_) {}
-      }
-
-      function storageRemove(storage, key) {
-        try {
-          storage.removeItem(key);
-        } catch (_) {}
-      }
-
-      // Theme: follow Management Center's own setting. Its document carries
-      // data-theme ("dark", "white", or none for its light theme); when the
-      // page cannot reach it, read the persisted setting instead.
-      function managementCenterTheme() {
-        try {
-          if (window.parent !== window) {
-            return (
-              window.parent.document.documentElement.getAttribute(
-                "data-theme",
-              ) || "light"
-            );
-          }
-        } catch (_) {}
-        let saved = "auto";
-        try {
-          const persisted = JSON.parse(storageGet(localStorage, MC_THEME_KEY));
-          if (persisted && persisted.state && persisted.state.theme) {
-            saved = persisted.state.theme;
-          }
-        } catch (_) {}
-        if (saved === "auto") {
-          return matchMedia("(prefers-color-scheme: dark)").matches
-            ? "dark"
-            : "white";
-        }
-        return saved;
-      }
-
-      function applyTheme() {
-        document.documentElement.setAttribute(
-          "data-theme",
-          managementCenterTheme(),
-        );
-      }
-
-      applyTheme();
-      matchMedia("(prefers-color-scheme: dark)").addEventListener(
-        "change",
-        applyTheme,
-      );
-      window.addEventListener("storage", (event) => {
-        if (event.key === MC_THEME_KEY) applyTheme();
-      });
-      try {
-        if (window.parent !== window) {
-          new MutationObserver(applyTheme).observe(
-            window.parent.document.documentElement,
-            { attributes: true, attributeFilter: ["data-theme"] },
-          );
-        }
-      } catch (_) {}
-
-      // Management key: Management Center persists it, when "remember" is on,
-      // as zustand state {"state":{"managementKey":...}} obfuscated by
-      // src/utils/encryption.ts. A key typed here lives in sessionStorage.
-      function deobfuscate(payload) {
-        const prefix = "enc::v1::";
-        if (!payload.startsWith(prefix)) return payload;
-        const binary = atob(payload.slice(prefix.length));
-        const secret = new TextEncoder().encode(
-          "cli-proxy-api-webui::secure-storage|" +
-            location.host +
-            "|" +
-            navigator.userAgent,
-        );
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-          bytes[i] = binary.charCodeAt(i) ^ secret[i % secret.length];
-        }
-        return new TextDecoder().decode(bytes);
-      }
-
-      function managementCenterKey() {
-        const raw = storageGet(localStorage, MC_AUTH_KEY);
-        if (!raw || storageGet(sessionStorage, REJECTED_KEY) === raw) return "";
-        try {
-          const persisted = JSON.parse(deobfuscate(raw));
-          const key =
-            persisted && persisted.state && persisted.state.managementKey;
-          return typeof key === "string" ? key.trim() : "";
-        } catch (_) {
-          return "";
-        }
-      }
-
-      const auth = { key: "", source: "" };
-
-      function resolveKey() {
-        const typed = storageGet(sessionStorage, SESSION_KEY);
-        if (typed) return { key: typed, source: "session" };
-        const shared = managementCenterKey();
-        if (shared) return { key: shared, source: "mc" };
-        return { key: "", source: "" };
-      }
-
-      // A rejected key is never retried: five failures ban the address for
-      // 30 minutes.
-      function forgetKey() {
-        if (auth.source === "session")
-          storageRemove(sessionStorage, SESSION_KEY);
-        if (auth.source === "mc") {
-          storageSet(
-            sessionStorage,
-            REJECTED_KEY,
-            storageGet(localStorage, MC_AUTH_KEY) || "",
-          );
-        }
-        auth.key = "";
-        auth.source = "";
-      }
-
-      class AuthError extends Error {}
-
-      // request calls a Management API route. A 404 answers missing when
-      // the caller passes one: config reads answer 404 for an absent key.
-      async function request(base, method, path, body, missing) {
-        if (!auth.key) throw new AuthError("No management key.");
-        const headers = { Authorization: "Bearer " + auth.key };
-        if (body !== undefined) headers["Content-Type"] = "application/json";
-        let response;
-        try {
-          response = await fetch(base + path, {
-            method,
-            headers,
-            body: body === undefined ? undefined : JSON.stringify(body),
-            cache: "no-store",
-            credentials: "omit",
-          });
-        } catch (err) {
-          throw new Error("CLIProxyAPI did not answer: " + err.message);
-        }
-        let data = null;
-        try {
-          data = await response.json();
-        } catch (_) {}
-        const message =
-          data && typeof data.error === "string" ? data.error : "";
-        if (response.status === 401) {
-          forgetKey();
-          usageQueue.length = 0;
-          showAuth(
-            "Management key rejected. Five wrong keys block this address for 30 minutes.",
-          );
-          throw new AuthError(message);
-        }
-        if (response.status === 404 && missing !== undefined) return missing;
-        if (!response.ok) {
-          throw new Error(
-            message || "CLIProxyAPI answered HTTP " + response.status + ".",
-          );
-        }
-        return data || {};
-      }
-
-      const api = (method, path, body) => request(API, method, path, body);
-      const cpa = (method, path, body, missing) =>
-        request(CPA, method, path, body, missing);
-
-      // DOM helper: strings become text nodes, never markup.
-      function h(tag, props, ...children) {
-        const el = document.createElement(tag);
-        for (const [name, value] of Object.entries(props || {})) {
-          if (value === null || value === undefined || value === false)
-            continue;
-          if (name === "class") el.className = value;
-          else if (name.startsWith("on"))
-            el.addEventListener(name.slice(2), value);
-          else el.setAttribute(name, value === true ? "" : String(value));
-        }
-        for (const child of children.flat()) {
-          if (child === null || child === undefined || child === false)
-            continue;
-          el.append(child instanceof Node ? child : String(child));
-        }
-        return el;
-      }
 
       const pad = (n) => String(n).padStart(2, "0");
 
@@ -2050,7 +1290,7 @@
       function badge(text, tone, title) {
         return h(
           "span",
-          { class: "badge" + (tone ? " badge-" + tone : ""), title },
+          { class: tone ? "badge " + tone : "badge", title },
           text,
         );
       }
@@ -2118,7 +1358,7 @@
         if (runtime.unavailable)
           return badge(prefix + "Unavailable", "warn", runtime.message);
         if (runtime.state === "error")
-          return badge(prefix + "Error", "bad", runtime.message);
+          return badge(prefix + "Error", "danger", runtime.message);
         if (runtime.state === "active") return badge(prefix + "Active", "ok");
         return badge(prefix + (runtime.state || "Unknown"));
       }
@@ -2152,12 +1392,11 @@
             h(
               "label",
               {},
-              checkbox(
+              switchButton(
                 Boolean(key[family]),
                 FAMILY_NAMES[family] + " for " + (key.label || key.id),
                 (on) => setFamily(key, family, on),
                 working,
-                null,
               ),
               FAMILY_NAMES[family],
             ),
@@ -2169,7 +1408,7 @@
         return h(
           "button",
           {
-            class: "btn btn-ghost btn-sm" + (extra ? " " + extra : ""),
+            class: "btn-ghost small" + (extra ? " " + extra : ""),
             type: "button",
             onclick,
             disabled,
@@ -2182,7 +1421,6 @@
         const working = busy.has(key.id);
         if (ui.renaming === key.id) {
           const input = h("input", {
-            class: "input",
             maxlength: 64,
             placeholder: key.masked_key,
             "aria-label": "Label",
@@ -2206,7 +1444,7 @@
             h(
               "button",
               {
-                class: "btn btn-primary btn-sm",
+                class: "btn-solid small",
                 type: "button",
                 onclick: () => saveRename(key),
                 disabled: working,
@@ -2221,7 +1459,7 @@
           { class: "key-head" },
           h(
             "span",
-            { class: "name" + (key.label ? "" : " name-masked") },
+            { class: key.label ? "name" : "name mono" },
             displayName(key),
           ),
           statusBadges(key),
@@ -2235,12 +1473,7 @@
               () => setDisabled(key, !key.disabled),
               working,
             ),
-            actionButton(
-              "Delete",
-              () => confirmDelete(key),
-              working,
-              "btn-danger",
-            ),
+            actionButton("Delete", () => confirmDelete(key), working, "danger"),
           ),
         );
       }
@@ -2284,9 +1517,9 @@
 
       function meter(bucket) {
         const left = Math.max(0, Math.min(100, 100 - bucket.used_percent));
-        const tone = left >= 70 ? "high" : left >= 30 ? "medium" : "low";
-        const fill = h("div", { class: "fill fill-" + tone });
-        fill.style.width = left + "%";
+        const tone = left >= 70 ? "ok" : left >= 30 ? "warn" : "danger";
+        const fill = h("div", { class: "fill " + tone });
+        fill.style.setProperty("--value", left + "%");
         const shown = left > 0 && left < 1 ? "<1" : String(Math.round(left));
         const value =
           bucket.exhausted && bucket.status && bucket.status !== "ok"
@@ -2362,7 +1595,7 @@
             h(
               "button",
               {
-                class: "btn btn-danger-solid btn-sm",
+                class: "btn-solid danger small",
                 type: "button",
                 onclick: () => deleteKey(key),
                 disabled: working,
@@ -2383,12 +1616,14 @@
 
       function buildCard(key) {
         const usageEl = h("div", { class: "usage" });
-        const noticeEl = h("div", { class: "notice" });
+        const noticeEl = h("div", { class: "key-note" });
         fillUsage(usageEl, key.id);
         fillNotice(noticeEl, key);
         const card = h(
           "li",
-          { class: "card key" + (key.disabled ? " is-disabled" : "") },
+          {
+            class: "glass-card card key" + (key.disabled ? " is-disabled" : ""),
+          },
           buildHead(key),
           buildMeta(key),
           familySwitches(key),
@@ -2410,7 +1645,7 @@
         if (login.expired && !login.disabled) {
           return badge(
             "Login expired",
-            "bad",
+            "danger",
             "Log in again from OAuth Login → OpenCode Go.",
           );
         }
@@ -2420,7 +1655,7 @@
       function buildLoginCard(login) {
         const working = busy.has(login.id);
         const usageEl = h("div", { class: "usage" });
-        const noticeEl = h("div", { class: "notice" });
+        const noticeEl = h("div", { class: "key-note" });
         fillUsage(usageEl, login.id);
         fillNotice(noticeEl, login);
         const items = [];
@@ -2442,7 +1677,10 @@
         items.push(...requestCounts(login));
         const card = h(
           "li",
-          { class: "card key" + (login.disabled ? " is-disabled" : "") },
+          {
+            class:
+              "glass-card card key" + (login.disabled ? " is-disabled" : ""),
+          },
           h(
             "div",
             { class: "key-head" },
@@ -2520,7 +1758,7 @@
         ) {
           const id = usageQueue.shift();
           usageActive++;
-          api("GET", usagePath(id))
+          api(usagePath(id))
             .then((data) => usage.set(id, { state: "ok", data: data.usage }))
             .catch((err) => {
               if (err instanceof AuthError) usage.delete(id);
@@ -2536,8 +1774,8 @@
 
       async function loadList() {
         const [keyData, loginData] = await Promise.all([
-          api("GET", "/keys"),
-          api("GET", "/logins"),
+          api("/keys"),
+          api("/logins"),
         ]);
         keys = keyData.keys || [];
         logins = loginData.logins || [];
@@ -2602,7 +1840,10 @@
 
       function testKey(key) {
         return act(key, async () => {
-          const data = await api("POST", "/keys/test", { id: key.id });
+          const data = await api("/keys/test", {
+            method: "POST",
+            body: { id: key.id },
+          });
           if (!data.ok) {
             results.set(key.id, { ok: false, text: data.error });
             return;
@@ -2632,9 +1873,12 @@
       function saveRename(key) {
         if (busy.has(key.id)) return;
         return act(key, async () => {
-          const data = await api("PATCH", "/keys", {
-            id: key.id,
-            label: ui.draft,
+          const data = await api("/keys", {
+            method: "PATCH",
+            body: {
+              id: key.id,
+              label: ui.draft,
+            },
           });
           ui.renaming = null;
           replaceKey(data.key);
@@ -2643,9 +1887,12 @@
 
       function patchLogin(login, patch) {
         return act(login, async () => {
-          const data = await api("PATCH", "/logins", {
-            id: login.id,
-            ...patch,
+          const data = await api("/logins", {
+            method: "PATCH",
+            body: {
+              id: login.id,
+              ...patch,
+            },
           });
           const index = data.login
             ? logins.findIndex((item) => item.id === data.login.id)
@@ -2659,7 +1906,10 @@
 
       function patchKey(key, patch) {
         return act(key, async () => {
-          const data = await api("PATCH", "/keys", { id: key.id, ...patch });
+          const data = await api("/keys", {
+            method: "PATCH",
+            body: { id: key.id, ...patch },
+          });
           replaceKey(data.key);
           loadExtras();
         });
@@ -2690,7 +1940,9 @@
 
       function deleteKey(key) {
         return act(key, async () => {
-          await api("DELETE", "/keys?id=" + encodeURIComponent(key.id));
+          await api("/keys?id=" + encodeURIComponent(key.id), {
+            method: "DELETE",
+          });
           ui.confirming = null;
           usage.delete(key.id);
           results.delete(key.id);
@@ -2734,7 +1986,10 @@
         submit.disabled = true;
         submit.textContent = "Checking key…";
         try {
-          const data = await api("POST", "/keys", { label, api_key: apiKey });
+          const data = await api("/keys", {
+            method: "POST",
+            body: { label, api_key: apiKey },
+          });
           if (data.key)
             usage.set(data.key.id, { state: "ok", data: data.usage });
           await loadList();
@@ -2781,11 +2036,11 @@
       async function loadModels() {
         try {
           const [view, maps] = await Promise.all([
-            api("GET", "/models"),
+            api("/models"),
             Promise.all([
-              cpa("GET", ALIAS_MAP, undefined, {}),
-              cpa("GET", EXCLUDED_MAP, undefined, {}),
-              cpa("GET", PLUGIN_CONFIG, undefined, {}),
+              cpa(ALIAS_MAP, { missing: {} }),
+              cpa(EXCLUDED_MAP, { missing: {} }),
+              cpa(PLUGIN_CONFIG, { missing: {} }),
             ]).then(
               ([aliasMap, excludedMap, own]) => ({
                 aliasMap,
@@ -2846,7 +2101,7 @@
           return;
         await queued(async () => {
           const latest = channelEntries(
-            await cpa("GET", EXCLUDED_MAP, undefined, {}),
+            await cpa(EXCLUDED_MAP, { missing: {} }),
           ).map(String);
           const { moved } = migration(latest, ids, models.prefixes);
           if (moved.length === 0) return;
@@ -2926,13 +2181,10 @@
       async function loadServedBy() {
         const into = new Map();
         try {
-          configServedBy(
-            await cpa("GET", "/config/api-keys", undefined, {}),
-            into,
-          );
+          configServedBy(await cpa("/config/api-keys", { missing: {} }), into);
         } catch (_) {}
         try {
-          const list = await cpa("GET", "/credentials");
+          const list = await cpa("/credentials");
           const picked = new Map();
           for (const file of list.files || []) {
             const provider = String(file.provider || file.type || "")
@@ -2946,7 +2198,6 @@
             [...picked].map(async ([provider, name]) => {
               try {
                 const data = await cpa(
-                  "GET",
                   "/credentials/models?name=" + encodeURIComponent(name),
                 );
                 for (const model of data.models || [])
@@ -2970,6 +2221,18 @@
         return prefixOff() ? bare : h("code", {}, prefix + "/…");
       }
 
+      function switchButton(on, label, onchange, disabled) {
+        return h("button", {
+          class: "switch",
+          type: "button",
+          role: "switch",
+          "aria-checked": String(on),
+          "aria-label": label,
+          disabled,
+          onclick: () => onchange(!on),
+        });
+      }
+
       function checkbox(checked, label, onchange, disabled, title) {
         const box = h("input", {
           type: "checkbox",
@@ -2982,22 +2245,16 @@
         return box;
       }
 
-      function modelRow(model) {
-        const locked = models.busy.has(model.id) || !models.configLoaded;
-        // CPA's own entries still apply to the registered IDs: rules, and an
-        // exact entry only until the migration has moved it.
-        const rule = disabledRule(models.excluded, model);
-        const disabled =
-          Boolean(rule) || hasModel(models.disabled, model.upstream_id);
+      // modelCells are the Model, Protocol and Context cells of a catalog
+      // row; freeTitle explains the Free badge of a model priced at zero.
+      function modelCells(model, freeTitle) {
         const served = servedElsewhere(model);
         const limits = model.context
           ? model.context.toLocaleString() +
             " tokens" +
             (model.output ? ", output " + model.output.toLocaleString() : "")
           : null;
-        return h(
-          "tr",
-          { class: disabled ? "is-off" : null },
+        return [
           h(
             "td",
             {},
@@ -3005,13 +2262,7 @@
               "div",
               { class: "model-head" },
               h("span", { class: "model-name" }, model.name),
-              model.free
-                ? badge(
-                    "Free",
-                    "ok",
-                    "Priced at zero; keeps working after a usage limit.",
-                  )
-                : null,
+              model.free && freeTitle ? badge("Free", "ok", freeTitle) : null,
             ),
             h("div", { class: "model-id" }, model.id),
             served.length > 0
@@ -3024,6 +2275,23 @@
           ),
           h("td", {}, model.protocol),
           h("td", { class: "num", title: limits }, tokens(model.context)),
+        ];
+      }
+
+      function modelRow(model) {
+        const locked = models.busy.has(model.id) || !models.configLoaded;
+        // CPA's own entries still apply to the registered IDs: rules, and an
+        // exact entry only until the migration has moved it.
+        const rule = disabledRule(models.excluded, model);
+        const disabled =
+          Boolean(rule) || hasModel(models.disabled, model.upstream_id);
+        return h(
+          "tr",
+          { class: disabled ? "is-off" : null },
+          modelCells(
+            model,
+            "Priced at zero; keeps working after a usage limit.",
+          ),
           h(
             "td",
             { class: "toggle cross" },
@@ -3048,50 +2316,21 @@
       function zenRow(model) {
         const locked = models.busy.has(model.id) || !models.configLoaded;
         const enabled = hasModel(models.zen, model.upstream_id);
-        const served = servedElsewhere(model);
-        const limits = model.context
-          ? model.context.toLocaleString() +
-            " tokens" +
-            (model.output ? ", output " + model.output.toLocaleString() : "")
-          : null;
         return h(
           "tr",
           { class: enabled ? null : "is-off" },
-          h(
-            "td",
-            {},
-            h(
-              "div",
-              { class: "model-head" },
-              h("span", { class: "model-name" }, model.name),
-              model.free
-                ? badge(
-                    "Free",
-                    "ok",
-                    "Priced at zero; served by presenting the request as the OpenCode client.",
-                  )
-                : null,
-            ),
-            h("div", { class: "model-id" }, model.id),
-            served.length > 0
-              ? h(
-                  "div",
-                  { class: "served" },
-                  model.upstream_id + " is also served by " + served.join(", "),
-                )
-              : null,
+          modelCells(
+            model,
+            "Priced at zero; served by presenting the request as the OpenCode client.",
           ),
-          h("td", {}, model.protocol),
-          h("td", { class: "num", title: limits }, tokens(model.context)),
           h(
             "td",
             { class: "toggle" },
-            checkbox(
+            switchButton(
               enabled,
               "Enable " + model.id,
               (on) => toggleZen(model, on),
               locked,
-              null,
             ),
           ),
         );
@@ -3139,16 +2378,23 @@
         );
       }
 
+      const NOTICE_CLASS = {
+        ok: "notice ok",
+        warn: "notice warn",
+        error: "notice danger",
+        hint: "hint",
+      };
+
+      // note is a message in a section's stack: a tinted notice, or a hint.
       function note(tone, ...text) {
-        return h("p", { class: tone }, ...text);
+        return h("p", { class: NOTICE_CLASS[tone] }, ...text);
       }
 
       function modelNotices() {
         const view = models.view;
         const out = [];
         if (models.notice) {
-          const tone = { ok: "ok-text", warn: "warn-text", error: "error" };
-          out.push(note(tone[models.notice.tone], models.notice.text));
+          out.push(note(models.notice.tone, models.notice.text));
         }
         if (view.error) {
           out.push(
@@ -3177,7 +2423,7 @@
         if (pending.length > 0 && !models.notice) {
           out.push(
             note(
-              "warn-text",
+              "warn",
               "CLIProxyAPI has not registered this list yet (" +
                 pending.join("; ") +
                 "). Refresh models registers it.",
@@ -3309,10 +2555,14 @@
       }
 
       async function editChannel(mapPath, edit) {
-        const map = await cpa("GET", mapPath, undefined, {});
+        const map = await cpa(mapPath, { missing: {} });
         const next = edit(channelEntries(map));
         const write = channelWrite(map, next);
-        if (write) await cpa(write.method, mapPath + write.path, write.body);
+        if (write)
+          await cpa(mapPath + write.path, {
+            method: write.method,
+            body: write.body,
+          });
         return next;
       }
 
@@ -3337,11 +2587,14 @@
       // editList rewrites one list setting of the plugin's config node, such
       // as disabled_models or zen_models.
       async function editList(key, edit) {
-        const node = await cpa("GET", PLUGIN_CONFIG, undefined, {});
+        const node = await cpa(PLUGIN_CONFIG, { missing: {} });
         const next = edit(stringList(node && node[key]));
         const write = listWrite(node, key, next);
         if (write)
-          await cpa(write.method, PLUGIN_CONFIG + write.path, write.body);
+          await cpa(PLUGIN_CONFIG + write.path, {
+            method: write.method,
+            body: write.body,
+          });
         return next;
       }
 
@@ -3437,7 +2690,7 @@
         models.notice = null;
         renderModels();
         try {
-          const report = await api("POST", "/models/refresh");
+          const report = await api("/models/refresh", { method: "POST" });
           models.notice = {
             tone: report.registered ? "ok" : "warn",
             text: refreshSummary(report),
@@ -3464,7 +2717,7 @@
 
       async function loadFree() {
         try {
-          free.view = await api("GET", "/free");
+          free.view = await api("/free");
         } catch (err) {
           if (err instanceof AuthError) return;
           free.notice = { tone: "error", text: err.message };
@@ -3476,34 +2729,10 @@
       function freeRow(model) {
         const locked = free.busy.has(model.id) || !models.configLoaded;
         const disabled = hasModel(models.freeDisabled, model.upstream_id);
-        const served = servedElsewhere(model);
-        const limits = model.context
-          ? model.context.toLocaleString() +
-            " tokens" +
-            (model.output ? ", output " + model.output.toLocaleString() : "")
-          : null;
         return h(
           "tr",
           { class: disabled ? "is-off" : null },
-          h(
-            "td",
-            {},
-            h(
-              "div",
-              { class: "model-head" },
-              h("span", { class: "model-name" }, model.name),
-            ),
-            h("div", { class: "model-id" }, model.id),
-            served.length > 0
-              ? h(
-                  "div",
-                  { class: "served" },
-                  model.upstream_id + " is also served by " + served.join(", "),
-                )
-              : null,
-          ),
-          h("td", {}, model.protocol),
-          h("td", { class: "num", title: limits }, tokens(model.context)),
+          modelCells(model, null),
           h(
             "td",
             { class: "toggle cross" },
@@ -3524,7 +2753,7 @@
         const on = present && !view.disabled;
         const toggle = $("free-toggle");
         toggle.textContent = on ? "Turn off" : "Turn on";
-        toggle.className = "btn " + (on ? "btn-ghost" : "btn-primary");
+        toggle.className = on ? "btn-glass" : "btn-solid";
         toggle.disabled = free.working || !view;
         $("free-refresh").hidden = !on || modelsListed();
         $("free-refresh").disabled = free.working || models.refreshing;
@@ -3533,8 +2762,7 @@
         );
         const notices = [];
         if (free.notice) {
-          const tone = { ok: "ok-text", warn: "warn-text", error: "error" };
-          notices.push(note(tone[free.notice.tone], free.notice.text));
+          notices.push(note(free.notice.tone, free.notice.text));
         }
         if (on && view.error)
           notices.push(
@@ -3547,7 +2775,7 @@
         if (on && view.unregistered.length + view.unlisted.length > 0)
           notices.push(
             note(
-              "warn-text",
+              "warn",
               "CLIProxyAPI has not registered this list yet. Refresh models registers it.",
             ),
           );
@@ -3599,7 +2827,10 @@
         free.notice = null;
         renderFree();
         try {
-          free.view = await api("PUT", "/free", { enabled: on });
+          free.view = await api("/free", {
+            method: "PUT",
+            body: { enabled: on },
+          });
         } catch (err) {
           if (!(err instanceof AuthError))
             free.notice = { tone: "error", text: err.message };
@@ -3616,12 +2847,12 @@
         free.notice = null;
         renderFree();
         try {
-          const report = await api("POST", "/models/refresh");
+          const report = await api("/models/refresh", { method: "POST" });
           free.notice = {
             tone: report.registered ? "ok" : "warn",
             text: refreshSummary(report),
           };
-          free.view = await api("GET", "/free");
+          free.view = await api("/free");
         } catch (err) {
           if (!(err instanceof AuthError))
             free.notice = { tone: "error", text: err.message };
@@ -3649,8 +2880,8 @@
         let config = null;
         try {
           [view, config] = await Promise.all([
-            api("GET", "/routing"),
-            cpa("GET", "/config/routing", undefined, {}).catch((err) => {
+            api("/routing"),
+            cpa("/config/routing", { missing: {} }).catch((err) => {
               if (err instanceof AuthError) throw err;
               return null;
             }),
@@ -3753,20 +2984,16 @@
               "routing-" + family + "-weight",
             ).value;
           }
-          const view = await api(
-            "PUT",
-            "/routing",
-            routingBody(fields, routingFamilies),
-          );
-          const config = await cpa(
-            "GET",
-            "/config/routing",
-            undefined,
-            {},
-          ).catch((err) => {
-            if (err instanceof AuthError) throw err;
-            return null;
+          const view = await api("/routing", {
+            method: "PUT",
+            body: routingBody(fields, routingFamilies),
           });
+          const config = await cpa("/config/routing", { missing: {} }).catch(
+            (err) => {
+              if (err instanceof AuthError) throw err;
+              return null;
+            },
+          );
           renderRouting(view, config);
         } catch (err) {
           if (!(err instanceof AuthError)) showRoutingError(err.message);
@@ -3795,7 +3022,7 @@
       };
       const OUTCOMES = {
         succeeded: ["Succeeded", "ok"],
-        failed: ["Failed", "bad"],
+        failed: ["Failed", "danger"],
         rejected: ["Rejected", "warn"],
         cancelled: ["Cancelled", "warn"],
       };
@@ -3825,7 +3052,7 @@
       async function loadWorkspaces(reload) {
         let data;
         try {
-          data = await api("GET", "/workspaces");
+          data = await api("/workspaces");
         } catch (err) {
           if (err instanceof AuthError) return;
           workspaceUsage.error = err.message;
@@ -3916,7 +3143,7 @@
         let data = null;
         let error = "";
         try {
-          data = await api("GET", "/workspaces/usage?" + params);
+          data = await api("/workspaces/usage?" + params);
         } catch (err) {
           if (err instanceof AuthError) {
             view.loading = false;
@@ -3950,6 +3177,7 @@
             h(
               "button",
               {
+                class: "segmented-item",
                 type: "button",
                 "aria-pressed": String(value === current),
                 onclick: () => onpick(value),
@@ -3997,7 +3225,6 @@
             class: "workspace-body" + (view.loading ? " is-loading" : ""),
             "aria-busy": view.loading ? "true" : null,
           },
-          summaryTiles(data.summary),
           chartCard(view),
           modelPart(data.models),
           webSearchPart(data.summary),
@@ -4005,19 +3232,19 @@
         );
       }
 
-      function tile(label, value, title) {
+      function stat(label, value, title) {
         return h(
           "div",
-          { class: "card tile", title },
-          h("span", { class: "tile-label" }, label),
-          h("span", { class: "tile-value" }, value),
+          { class: "stat", title },
+          h("p", { class: "stat-label" }, label),
+          h("p", { class: "stat-value" }, value),
         );
       }
 
       const plural = (count, one, many) =>
         count.toLocaleString("en-US") + " " + (count === 1 ? one : many);
 
-      function summaryTiles(summary) {
+      function summaryStats(summary) {
         if (summary.error)
           return h(
             "p",
@@ -4032,10 +3259,10 @@
         ];
         return h(
           "div",
-          { class: "tiles" },
-          tile("Cost", usd(summary.cost)),
-          tile("Requests", summary.requests.toLocaleString("en-US")),
-          tile(
+          { class: "stat-row" },
+          stat("Cost", usd(summary.cost)),
+          stat("Requests", summary.requests.toLocaleString("en-US")),
+          stat(
             "Tokens",
             compact(summary.tokens),
             parts
@@ -4047,18 +3274,21 @@
         );
       }
 
+      // chartCard is the range's totals over its columns of cost or tokens
+      // per hour or day, on one paper card.
       function chartCard(view) {
         const chart = view.data.chart;
         const title =
           (chart.bucket === "hour" ? "Hourly " : "Daily ") +
           (view.metric === "cost" ? "cost" : "tokens");
         const card = h(
-          "div",
-          { class: "card chart-card" },
+          "section",
+          { class: "paper card" },
+          summaryStats(view.data.summary),
           h(
             "div",
             { class: "chart-head" },
-            h("h4", {}, title),
+            h("h3", { class: "chart-title" }, title),
             segmented(METRICS, view.metric, "Chart value", (metric) =>
               setMetric(view, metric),
             ),
@@ -4071,7 +3301,7 @@
           return card;
         }
         const host = h("div", {
-          class: "chart",
+          class: "chart-plot",
           role: "group",
           "aria-label": title,
         });
@@ -4105,9 +3335,10 @@
         return el;
       }
 
-      // drawChart draws one bar per bucket at the host's width: thin bars
-      // with rounded tops, hairline ticks at zero, half and the axis top, the
-      // peak labelled, and every value in a tooltip and a hidden table.
+      // drawChart draws one column per bucket at the host's width: columns
+      // band − 4px wide, with round data-end corners, hairline grid at zero, half
+      // and the axis top, the peak labelled, and every value in a tooltip
+      // and a hidden table. A range with nothing in it keeps the frame.
       function drawChart(host, chart, metric) {
         const buckets = chart.buckets;
         const hourly = chart.bucket === "hour";
@@ -4119,39 +3350,27 @@
           if (value(bucket) > value(buckets[peakAt])) peakAt = i;
         });
         const peak = buckets.length > 0 ? value(buckets[peakAt]) : 0;
+        const empty = !(peak > 0);
         host.onkeydown = null;
         host.onfocus = null;
         host.onblur = null;
-        if (!(peak > 0)) {
-          host.removeAttribute("tabindex");
-          host.replaceChildren(
-            h(
-              "p",
-              { class: "hint chart-empty" },
-              metric === "cost"
-                ? "No cost in this range."
-                : "No tokens in this range.",
-            ),
-          );
-          return;
-        }
         const width = Math.max(host.clientWidth, 240);
-        const height = 180;
+        const height = 220;
         const top = axisMax(peak);
         const ticks = [0, top / 2, top].map((tick) => [tick, format(tick)]);
-        // The gutter fits the longest tick label at 11px, about 6.5px a
-        // character.
+        // The gutter fits the longest tick label at 12px, about 7px a
+        // character; an empty frame has no y labels.
         const longest = Math.max(...ticks.map(([, label]) => label.length));
         const gutter = {
           top: 18,
-          bottom: 22,
-          left: Math.max(40, longest * 6.5 + 12),
+          bottom: 24,
+          left: empty ? 0 : Math.max(40, longest * 7 + 8),
         };
         const plotWidth = width - gutter.left;
         const plotHeight = height - gutter.top - gutter.bottom;
         const base = gutter.top + plotHeight;
-        const band = plotWidth / buckets.length;
-        const barWidth = Math.max(1, Math.min(24, band - 2));
+        const band = plotWidth / Math.max(1, buckets.length);
+        const barWidth = Math.max(1, Math.min(24, band - 4));
         const y = (amount) => gutter.top + plotHeight * (1 - amount / top);
         const centre = (i) => gutter.left + band * (i + 0.5);
         const root = svg("svg", {
@@ -4164,36 +3383,22 @@
           const at = Math.round(y(tick)) + 0.5;
           root.append(
             svg("line", {
-              class: "grid",
+              class: tick === 0 ? "baseline" : "grid",
               x1: gutter.left,
               x2: width,
               y1: at,
               y2: at,
             }),
-            svg(
-              "text",
-              { x: gutter.left - 8, y: y(tick) + 4, "text-anchor": "end" },
-              label,
-            ),
           );
+          if (!empty)
+            root.append(
+              svg(
+                "text",
+                { x: gutter.left - 8, y: y(tick) + 4, "text-anchor": "end" },
+                label,
+              ),
+            );
         }
-        const bars = buckets.map((bucket, i) => {
-          const amount = value(bucket);
-          if (!(amount > 0)) return null;
-          const tall = Math.max(1, (plotHeight * amount) / top);
-          const left = centre(i) - barWidth / 2;
-          const right = left + barWidth;
-          const crest = base - tall;
-          const r = Math.min(4, barWidth / 2, tall);
-          const bar = svg("path", {
-            class: "bar",
-            d:
-              `M${left},${base}V${crest + r}Q${left},${crest} ${left + r},${crest}` +
-              `H${right - r}Q${right},${crest} ${right},${crest + r}V${base}Z`,
-          });
-          root.append(bar);
-          return bar;
-        });
         const every = labelEvery(
           buckets.length,
           Math.floor(plotWidth / 48),
@@ -4212,6 +3417,38 @@
                 bucketName(bucket.date, hourly, true),
               ),
             );
+        });
+        if (empty) {
+          host.removeAttribute("tabindex");
+          host.classList.remove("is-pointing");
+          host.replaceChildren(
+            root,
+            h(
+              "p",
+              { class: "chart-empty" },
+              metric === "cost"
+                ? "No cost in this range."
+                : "No tokens in this range.",
+            ),
+          );
+          return;
+        }
+        const bars = buckets.map((bucket, i) => {
+          const amount = value(bucket);
+          if (!(amount > 0)) return null;
+          const tall = Math.max(1, (plotHeight * amount) / top);
+          const left = centre(i) - barWidth / 2;
+          const right = left + barWidth;
+          const crest = base - tall;
+          const r = Math.min(6, barWidth / 2, tall);
+          const bar = svg("path", {
+            class: "bar",
+            d:
+              `M${left},${base}V${crest + r}Q${left},${crest} ${left + r},${crest}` +
+              `H${right - r}Q${right},${crest} ${right},${crest + r}V${base}Z`,
+          });
+          root.append(bar);
+          return bar;
         });
         const peakX = centre(peakAt);
         const anchor =
@@ -4246,29 +3483,39 @@
         });
         root.append(hit);
 
-        const tip = h("div", { class: "chart-tip", hidden: true });
+        const tip = h("div", { class: "chart-tip" });
         let active = -1;
         const show = (i) => {
           if (active >= 0 && bars[active])
             bars[active].classList.remove("is-active");
           active = i;
+          host.classList.toggle("is-pointing", i >= 0);
           if (i < 0) {
-            tip.hidden = true;
+            tip.classList.remove("chart-tip-show");
             return;
           }
           if (bars[i]) bars[i].classList.add("is-active");
           const bucket = buckets[i];
+          const row = (name, text) =>
+            h(
+              "div",
+              { class: "chart-tip-row" },
+              h("span", { class: "chart-tip-name" }, name),
+              h("span", { class: "chart-tip-value" }, text),
+            );
           tip.replaceChildren(
-            h("strong", {}, format(value(bucket))),
-            [
+            h(
+              "div",
+              { class: "chart-tip-when" },
               bucketName(bucket.date, hourly, false),
-              plural(bucket.requests, "request", "requests"),
-              metric === "cost"
-                ? compact(bucket.tokens) + " tokens"
-                : usd(bucket.cost),
-            ].join(" · "),
+            ),
+            row(metric === "cost" ? "Cost" : "Tokens", format(value(bucket))),
+            metric === "cost"
+              ? row("Tokens", compact(bucket.tokens))
+              : row("Cost", usd(bucket.cost)),
+            row("Requests", bucket.requests.toLocaleString("en-US")),
           );
-          tip.hidden = false;
+          tip.classList.add("chart-tip-show");
           const left = centre(i) - tip.offsetWidth / 2;
           tip.style.left =
             Math.max(0, Math.min(left, width - tip.offsetWidth)) + "px";
@@ -4287,6 +3534,7 @@
         host.onfocus = () => show(buckets.length - 1);
         host.onblur = () => show(-1);
         host.onkeydown = (event) => {
+          if (event.key === "Escape") return show(-1);
           const move = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
           if (!move) return;
           event.preventDefault();
@@ -4344,7 +3592,7 @@
       }
 
       function modelPart(list) {
-        const part = h("div", { class: "usage-part" }, h("h4", {}, "By model"));
+        const part = h("div", { class: "list" }, h("h3", {}, "By model"));
         if (list.error) {
           part.append(
             h("p", { class: "error" }, "Models unavailable: " + list.error),
@@ -4368,10 +3616,10 @@
         part.append(
           h(
             "div",
-            { class: "card table-card" },
+            { class: "paper card table-card" },
             h(
               "table",
-              {},
+              { class: "table" },
               h(
                 "thead",
                 {},
@@ -4394,7 +3642,7 @@
                       {},
                       h(
                         "div",
-                        { class: "model-head" },
+                        { class: "model-head nowrap" },
                         row.model,
                         familyBadge(row.family),
                       ),
@@ -4431,7 +3679,7 @@
         return h(
           "div",
           { class: "usage-line" },
-          h("h4", {}, "Web search"),
+          h("h3", {}, "Web search"),
           h(
             "span",
             { class: "section-meta" },
@@ -4466,7 +3714,7 @@
             {},
             h(
               "div",
-              { class: "model-head" },
+              { class: "model-head nowrap" },
               entry.model,
               familyBadge(entry.family),
             ),
@@ -4496,11 +3744,11 @@
         const listed = !log.needs_login && !log.error && log.entries.length > 0;
         const part = h(
           "div",
-          { class: "usage-part" },
+          { class: "list" },
           h(
             "div",
             { class: "usage-line" },
-            h("h4", {}, "Latest requests"),
+            h("h3", {}, "Latest requests"),
             listed
               ? h(
                   "span",
@@ -4536,10 +3784,10 @@
           part.append(
             h(
               "div",
-              { class: "card table-card" },
+              { class: "paper card table-card" },
               h(
                 "table",
-                {},
+                { class: "table" },
                 h(
                   "thead",
                   {},
@@ -4570,10 +3818,13 @@
         for (const other of tabs) {
           const selected = other === tab;
           other.setAttribute("aria-selected", String(selected));
+          other.classList.toggle("nav-link-active", selected);
+          if (selected) other.setAttribute("aria-current", "true");
+          else other.removeAttribute("aria-current");
           other.tabIndex = selected ? 0 : -1;
           $(other.getAttribute("aria-controls")).hidden = !selected;
         }
-        storageSet(sessionStorage, TAB_KEY, tab.id);
+        storage.set(sessionStorage, TAB_KEY, tab.id);
         if (focus) tab.focus();
       }
 
@@ -4593,58 +3844,22 @@
         });
       }
 
-      const savedTab = storageGet(sessionStorage, TAB_KEY);
+      const savedTab = storage.get(sessionStorage, TAB_KEY);
       selectTab(tabs.find((tab) => tab.id === savedTab) || tabs[0]);
 
-      // Authentication
-      function showContent() {
-        $("auth").hidden = true;
-        $("content").hidden = false;
-        $("bar-actions").hidden = false;
+      function showContent(shown) {
+        $("content").hidden = !shown;
+        $("reload").hidden = !shown;
       }
 
-      function showAuth(message) {
-        $("content").hidden = true;
-        $("bar-actions").hidden = true;
-        $("auth").hidden = false;
-        $("auth-error").textContent = message;
-        $("auth-error").hidden = !message;
-        $("auth-key").value = "";
-        $("auth-key").focus();
-      }
-
-      $("auth").addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const typed = $("auth-key").value.trim();
-        if (!typed) return;
-        auth.key = typed;
-        auth.source = "typed";
-        const submit = $("auth-submit");
-        submit.disabled = true;
-        try {
-          await loadList();
-          storageSet(sessionStorage, SESSION_KEY, typed);
-          auth.source = "session";
-          showContent();
-          queueUsage(allIds());
-          loadExtras();
-        } catch (err) {
-          if (!(err instanceof AuthError)) {
-            $("auth-error").textContent = err.message;
-            $("auth-error").hidden = false;
-          }
-        } finally {
-          submit.disabled = false;
-        }
+      auth.onRejected(() => {
+        usageQueue.length = 0;
+        showContent(false);
       });
-
-      Object.assign(auth, resolveKey());
-      if (auth.key) {
-        showContent();
+      auth.init(() => {
+        showContent(true);
         refresh();
-      } else {
-        showAuth("");
-      }
+      });
     </script>
   </body>
 </html>

@@ -7,36 +7,36 @@ import (
 	"testing"
 
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginapi"
+	"github.com/whexy/whexy-cpa-store/pluginkit/host/hosttest"
+	"github.com/whexy/whexy-cpa-store/pluginkit/rpc"
 )
+
+func lifecycle(configYAML string) []byte {
+	raw, _ := json.Marshal(rpc.LifecycleRequest{ConfigYAML: []byte(configYAML)})
+	return raw
+}
 
 // configureYAML applies a configuration as plugin.reconfigure does and
 // returns the lines the plugin logged.
 func configureYAML(t *testing.T, configYAML string) []string {
 	t.Helper()
 	previous, previousReport := currentSet.Load(), lastReport
-	previousCallHost := callHost
-	var logged []string
-	callHost = func(method string, payload []byte) ([]byte, error) {
-		var request hostLogRequest
-		if errUnmarshal := json.Unmarshal(payload, &request); errUnmarshal != nil {
-			t.Fatalf("decode %s payload: %v", method, errUnmarshal)
-		}
-		logged = append(logged, request.Level+" "+request.Message)
-		return []byte(`{"ok":true}`), nil
-	}
 	t.Cleanup(func() {
 		currentSet.Store(previous)
 		lastReport = previousReport
-		callHost = previousCallHost
 	})
-	raw, _ := json.Marshal(lifecycleRequest{ConfigYAML: []byte(configYAML)})
-	configure(raw)
+	fake := hosttest.Install(t)
+	configure(lifecycle(configYAML))
+	var logged []string
+	for _, line := range fake.Logs() {
+		logged = append(logged, line.Level+" "+line.Message)
+	}
 	return logged
 }
 
 func TestCatalogEntryBecomesModel(t *testing.T) {
 	// The entry from the upstream catalog, native_capabilities included.
-	set, problems, err := parseConfig([]byte(`
+	set, problems, err := parseConfig(lifecycle(`
 enabled: true
 priority: 0
 provider: vertex
@@ -88,7 +88,7 @@ func TestProviderDefaults(t *testing.T) {
 		{" AIStudio ", "gemini", "google", "models/x-1"},
 	}
 	for _, tt := range tests {
-		set, problems, err := parseConfig([]byte("provider: " + tt.provider + "\nmodels: [{id: ' x-1 '}]"))
+		set, problems, err := parseConfig(lifecycle("provider: " + tt.provider + "\nmodels: [{id: ' x-1 '}]"))
 		if err != nil || len(problems) != 0 || len(set.models) != 1 {
 			t.Fatalf("%s: err %v, problems %v, models %+v", tt.provider, err, problems, set.models)
 		}
@@ -105,7 +105,7 @@ func TestProviderDefaults(t *testing.T) {
 }
 
 func TestEntriesThatDoNotApply(t *testing.T) {
-	set, problems, err := parseConfig([]byte(`
+	set, problems, err := parseConfig(lifecycle(`
 provider: codex
 models:
   - id: gpt-6
@@ -166,7 +166,7 @@ func TestProviderChoice(t *testing.T) {
 		{"", ""},
 	}
 	for _, tt := range tests {
-		set, problems, err := parseConfig([]byte(tt.config))
+		set, problems, err := parseConfig(lifecycle(tt.config))
 		if err != nil {
 			t.Fatalf("%q: %v", tt.config, err)
 		}
@@ -189,7 +189,7 @@ func TestUnreadableConfigKeepsPreviousModels(t *testing.T) {
 		if ids := currentModels().ids(); !reflect.DeepEqual(ids, []string{"claude-next"}) {
 			t.Fatalf("%q: ids = %v", config, ids)
 		}
-		if len(logged) != 1 || !strings.HasPrefix(logged[0], "warn extra-models: keeping the previous models") {
+		if len(logged) != 1 || !strings.HasPrefix(logged[0], "warn keeping the previous models") {
 			t.Fatalf("%q: logged %q", config, logged)
 		}
 	}
@@ -211,7 +211,7 @@ func TestRepeatedConfigLogsOnce(t *testing.T) {
 	if logged := configureYAML(t, config); len(logged) != 0 {
 		t.Fatalf("same configure logged %q", logged)
 	}
-	if logged := configureYAML(t, "provider: claude\nmodels: [{id: claude-next}]"); !reflect.DeepEqual(logged, []string{"info extra-models: adding claude-next to claude"}) {
+	if logged := configureYAML(t, "provider: claude\nmodels: [{id: claude-next}]"); !reflect.DeepEqual(logged, []string{"info adding claude-next to claude"}) {
 		t.Fatalf("changed configure logged %q", logged)
 	}
 }
@@ -219,8 +219,8 @@ func TestRepeatedConfigLogsOnce(t *testing.T) {
 func TestModelRegister(t *testing.T) {
 	logged := configureYAML(t, "provider: claude\nmodels: [{id: claude-next}, {id: ''}]")
 	if want := []string{
-		"warn extra-models: skipping model 2: it has no id",
-		"info extra-models: adding claude-next to claude",
+		"warn skipping model 2: it has no id",
+		"info adding claude-next to claude",
 	}; !reflect.DeepEqual(logged, want) {
 		t.Fatalf("logged %q, want %q", logged, want)
 	}
@@ -248,7 +248,7 @@ func TestRegistrationDeclaresSettings(t *testing.T) {
 	}
 	var reply struct {
 		OK     bool
-		Result registration
+		Result rpc.Registration
 	}
 	if errUnmarshal := json.Unmarshal(raw, &reply); errUnmarshal != nil {
 		t.Fatalf("decode reply: %v", errUnmarshal)

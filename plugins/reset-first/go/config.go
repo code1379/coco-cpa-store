@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -10,7 +9,10 @@ import (
 	"time"
 
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginapi"
-	"gopkg.in/yaml.v3"
+	"github.com/whexy/whexy-cpa-store/pluginkit/background"
+	"github.com/whexy/whexy-cpa-store/pluginkit/config"
+	"github.com/whexy/whexy-cpa-store/pluginkit/datadir"
+	"github.com/whexy/whexy-cpa-store/pluginkit/host"
 )
 
 const (
@@ -48,14 +50,13 @@ func configFields() []pluginapi.ConfigField {
 	}
 }
 
-func parseSettings(configYAML []byte) (settings, error) {
+// parseSettings reads plugins.configs.reset-first from a lifecycle request.
+func parseSettings(request []byte) (settings, error) {
 	var raw struct {
 		PollInterval string `yaml:"poll_interval"`
 	}
-	if len(configYAML) > 0 {
-		if errUnmarshal := yaml.Unmarshal(configYAML, &raw); errUnmarshal != nil {
-			return settings{}, fmt.Errorf("decode plugin config: %w", errUnmarshal)
-		}
+	if errDecode := config.Decode(request, &raw); errDecode != nil {
+		return settings{}, errDecode
 	}
 	cfg := settings{PollInterval: defaultPollInterval}
 	switch value := strings.ToLower(strings.TrimSpace(raw.PollInterval)); value {
@@ -74,78 +75,46 @@ func parseSettings(configYAML []byte) (settings, error) {
 
 // configure handles plugin.register and plugin.reconfigure, and register again
 // after a failed hot upgrade rolled back to this library.
-func configure(raw []byte) error {
-	var request lifecycleRequest
-	if len(raw) > 0 {
-		if errUnmarshal := json.Unmarshal(raw, &request); errUnmarshal != nil {
-			return fmt.Errorf("decode lifecycle request: %w", errUnmarshal)
-		}
-	}
-	cfg, errParse := parseSettings(request.ConfigYAML)
+func configure(request []byte) error {
+	cfg, errParse := parseSettings(request)
 	if errParse != nil {
 		return errParse
 	}
 	currentConfig.Store(&cfg)
-	current.load(defaultDataDir())
-	background.start()
+	current.load(datadir.Default(pluginID))
+	startLoop()
 	return nil
 }
 
-// quiesce hands the state file to the library replacing this one: it saves
-// everything and stops writing. This library may still answer an in-flight
-// call afterwards, from memory.
+var (
+	loopMu sync.Mutex
+	// looping is set while the background loop runs; the host registers and
+	// reconfigures many times, and each must not start another loop.
+	looping bool
+)
+
+func startLoop() {
+	loopMu.Lock()
+	defer loopMu.Unlock()
+	if !looping {
+		looping = true
+		background.Go(loop)
+	}
+}
+
+// quiesce saves everything and stops writing, on shutdown and to hand the
+// state file to the library replacing this one in a hot upgrade. This library
+// may still answer an in-flight call afterwards, from memory.
 func quiesce() {
-	background.stop(shutdownGrace)
+	loopMu.Lock()
+	looping = false
+	background.Stop(shutdownGrace)
+	loopMu.Unlock()
 	current.persist(time.Now())
 }
 
-func shutdown() {
-	background.stop(shutdownGrace)
-	current.persist(time.Now())
-}
-
-// loop is the background work; start and stop may each come more than once.
-type loop struct {
-	mu     sync.Mutex
-	cancel context.CancelFunc
-	done   chan struct{}
-}
-
-var background loop
-
-func (l *loop) start() {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	if l.cancel != nil {
-		return
-	}
-	ctx, cancel := context.WithCancel(context.Background())
-	l.cancel, l.done = cancel, make(chan struct{})
-	go l.run(ctx, l.done)
-}
-
-func (l *loop) stop(grace time.Duration) {
-	l.mu.Lock()
-	cancel, done := l.cancel, l.done
-	l.cancel, l.done = nil, nil
-	l.mu.Unlock()
-	if cancel == nil {
-		return
-	}
-	cancel()
-	select {
-	case <-done:
-	case <-time.After(grace):
-	}
-}
-
-func (l *loop) run(ctx context.Context, done chan struct{}) {
-	defer close(done)
-	defer func() {
-		if recovered := recover(); recovered != nil {
-			hostLog("error", fmt.Sprintf("reset-first: background loop panicked: %v", recovered), nil)
-		}
-	}()
+// loop refreshes every tick until ctx ends.
+func loop(ctx context.Context) {
 	ticker := time.NewTicker(tick)
 	defer ticker.Stop()
 	for {
@@ -160,7 +129,7 @@ func (l *loop) run(ctx context.Context, done chan struct{}) {
 
 // refresh is one round of background work.
 func refresh(ctx context.Context) {
-	if entries, errList := hostAuthList(); errList == nil {
+	if entries, errList := host.AuthList(); errList == nil {
 		current.syncAccounts(entries, time.Now())
 	}
 	if interval := currentSettings().PollInterval; interval > 0 {
