@@ -1,4 +1,4 @@
-package main
+package datadir
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestHostPluginsDir(t *testing.T) {
+func TestPluginsDir(t *testing.T) {
 	home, errHome := os.UserHomeDir()
 	if errHome != nil {
 		t.Fatal(errHome)
@@ -42,30 +42,14 @@ func TestHostPluginsDir(t *testing.T) {
 		{[]string{"--config"}, "/srv/cpa", "/srv/cpa/lib/plugins"},
 	}
 	for _, c := range cases {
-		if got := hostPluginsDir(c.args, c.wd, readFile); got != c.want {
-			t.Errorf("hostPluginsDir(%q, %q) = %q, want %q", c.args, c.wd, got, c.want)
+		if got := PluginsDir(c.args, c.wd, readFile); got != c.want {
+			t.Errorf("PluginsDir(%q, %q) = %q, want %q", c.args, c.wd, got, c.want)
 		}
-	}
-	if got := dataDirForPlugins("/data/plugins"); got != "/data/data/usage-dashboard" {
-		t.Errorf("dataDirForPlugins = %q", got)
 	}
 }
 
-func TestParseSettings(t *testing.T) {
-	cfg, errParse := parseSettings([]byte("enabled: true\nretention_days: 90\npricing: false\nmodel_families:\n  my-*: Mine\n"))
-	if errParse != nil {
-		t.Fatal(errParse)
-	}
-	if cfg.RetentionDays != 90 || cfg.PricingURL != "" || len(cfg.FamilyRules) != 1 || cfg.DataDir != "" {
-		t.Fatalf("cfg = %+v", cfg)
-	}
-	cfg, errParse = parseSettings([]byte("data_dir: rel/dir\npricing_url: null\n"))
-	if errParse != nil || !filepath.IsAbs(cfg.DataDir) || cfg.PricingURL != defaultPricingURL || cfg.RetentionDays != defaultRetentionDays {
-		t.Fatalf("cfg = %+v err=%v", cfg, errParse)
-	}
-	for _, bad := range []string{"retention_days: -3", "retention_days: 1000", "pricing_url: ftp://x", "model_families: {'[': X}"} {
-		if _, errParse := parseSettings([]byte(bad)); errParse == nil {
-			t.Errorf("parseSettings(%q) must fail", bad)
-		}
+func TestForPluginsDir(t *testing.T) {
+	if got := ForPluginsDir("/data/plugins", "demo"); got != "/data/data/demo" {
+		t.Errorf("ForPluginsDir = %q", got)
 	}
 }

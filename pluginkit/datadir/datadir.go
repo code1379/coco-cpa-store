@@ -1,4 +1,5 @@
-package main
+// Package datadir locates the directory where a plugin keeps its files.
+package datadir
 
 import (
 	"os"
@@ -8,31 +9,33 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// defaultDataDir places the session bindings beside the plugins directory. A
-// store install needs that directory writable and persistent, while
-// CLIProxyAPI's working directory often is neither. The host passes a plugin
-// only its own config and, since v8.0.31, loads a copy of the library from the
-// temporary directory, so the plugins directory is read from the host's config
-// file, as the host does to bootstrap its plugins.
-func defaultDataDir() string {
+// Default returns <plugins dir>/../data/<pluginID>. A store install needs
+// that directory writable and persistent, while CLIProxyAPI's working
+// directory often is neither (in the official image it is inside the
+// container). The host passes a plugin only its own config and, since
+// v8.0.31, loads a copy of the library from the temporary directory, so the
+// plugins directory is read from the host's config file, as the host does to
+// bootstrap its plugins.
+func Default(pluginID string) string {
 	wd, errWd := os.Getwd()
 	if errWd != nil {
 		wd = string(filepath.Separator)
 	}
-	return dataDirForPlugins(hostPluginsDir(os.Args[1:], wd, os.ReadFile))
+	return ForPluginsDir(PluginsDir(os.Args[1:], wd, os.ReadFile), pluginID)
 }
 
-func dataDirForPlugins(plugins string) string {
+// ForPluginsDir returns the data directory of pluginID beside plugins.
+func ForPluginsDir(plugins, pluginID string) string {
 	return filepath.Join(filepath.Dir(plugins), "data", pluginID)
 }
 
-// hostPluginsDir resolves plugins.dir the way CLIProxyAPI's
+// PluginsDir resolves plugins.dir the way CLIProxyAPI's
 // pluginBootstrapConfigPath and config.ResolvePluginsDir do: the config file
 // is the -config or --config argument, else config.yaml in the working
 // directory; plugins.dir defaults to plugins, and a relative one is relative
 // to the working directory.
-func hostPluginsDir(args []string, wd string, readFile func(string) ([]byte, error)) string {
-	path := hostConfigPath(args)
+func PluginsDir(args []string, wd string, readFile func(string) ([]byte, error)) string {
+	path := configPath(args)
 	if path == "" {
 		path = "config.yaml"
 	}
@@ -58,7 +61,7 @@ func hostPluginsDir(args []string, wd string, readFile func(string) ([]byte, err
 	return absUnder(wd, dir)
 }
 
-func hostConfigPath(args []string) string {
+func configPath(args []string) string {
 	for i, arg := range args {
 		switch {
 		case arg == "--":
